@@ -30,13 +30,15 @@ public class Config {
   public static int linkPartition;
   public static String hBaseCoreSite;
   public static String hBaseSite;
+  public static int shuffelerQueueSize;
+  public static int shuffelSize;
 
   public static void load() {
     String appConfigPath = "app.properties";
     Properties properties = new Properties();
 
-    try (FileInputStream fis = new FileInputStream(appConfigPath)) {
-      properties.load(fis);
+    try {
+      properties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream(appConfigPath));
       Config.server1Address = properties.getProperty("server1.ip");
       Config.server2Address = properties.getProperty("server2.ip");
       Config.kafka1Port = Integer.parseInt(properties.getProperty("kafka1.port"));
@@ -62,6 +64,8 @@ public class Config {
       Config.linkPartition = Integer.parseInt(properties.getProperty("kafka.consumer.htmlTopic.partition"));
       Config.hBaseCoreSite = properties.getProperty("core.site.path");
       Config.hBaseSite = properties.getProperty("hbase.site.path");
+      Config.shuffelSize = Integer.parseInt(properties.getProperty("shuffler.shuffle.size"));
+      Config.shuffelerQueueSize = Integer.parseInt(properties.getProperty("shuffler.queue.size"));
 
     } catch (FileNotFoundException e) {
       e.printStackTrace();
