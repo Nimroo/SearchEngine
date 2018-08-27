@@ -5,6 +5,7 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import java.util.Properties;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.StringSerializer;
 
 public class KafkaLinkProducer {
 
@@ -31,8 +32,8 @@ public class KafkaLinkProducer {
     props.put("batch.size", Config.kafkaProducerBatchSize);
     props.put("linger.ms", Config.kafkaProducerLingerMS);
     props.put("buffer.memory", 33554432);
-    props.put("key.serializer", "org.apache.kafka.common.ir.sahab.serialization.StringSerializer");
-    props.put("value.serializer", "org.apache.kafka.common.ir.sahab.serialization.StringSerializer");
+    props.put("key.serializer", StringSerializer.class);
+    props.put("value.serializer", StringSerializer.class);
     producer = new KafkaProducer<String, String>(props);
   }
 

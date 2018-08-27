@@ -5,6 +5,7 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
+import org.apache.kafka.common.serialization.StringSerializer;
 
 import java.util.Properties;
 
@@ -33,7 +34,7 @@ public class KafkaTwitterProducer {
         props.put("batch.size", Config.kafkaProducerBatchSize);
         props.put("linger.ms", Config.kafkaProducerLingerMS);
         props.put("buffer.memory", 33554432);
-        props.put("key.serializer", "org.apache.kafka.common.ir.sahab.serialization.StringSerializer");
+        props.put("key.serializer", StringSerializer.class);
         props.put("value.serializer", ByteArraySerializer.class.getName());
         producer = new KafkaProducer<String, byte[]>(props);
     }

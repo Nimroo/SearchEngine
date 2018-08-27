@@ -4,6 +4,7 @@ import ir.sahab.nimroo.Config;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.serialization.StringDeserializer;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,8 +35,8 @@ public class KafkaLinkConsumer {
     props.put("auto.commit.interval.ms", "1000");
     props.put("session.timeout.ms", Config.kafkaConsumerSessionTimeoutsMS);
     props.put("max.poll.records", Config.kafkaConsumerMaxPollRecords);
-    props.put("key.deserializer", "org.apache.kafka.common.ir.sahab.serialization.StringDeserializer");
-    props.put("value.deserializer", "org.apache.kafka.common.ir.sahab.serialization.StringDeserializer");
+    props.put("key.deserializer", StringDeserializer.class);
+    props.put("value.deserializer", StringDeserializer.class);
     consumer = new KafkaConsumer<>(props);
     consumer.subscribe(Collections.singleton(topicName));
   }
