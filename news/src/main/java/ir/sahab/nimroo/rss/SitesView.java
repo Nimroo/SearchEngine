@@ -53,8 +53,8 @@ public class SitesView {
     regex.add("9");
     for (String topic : topics) {
       String temp = topic.toLowerCase();
-      for (int i = 0; i < regex.size(); i++) {
-        temp = temp.replaceAll(regex.get(0), "");
+      for (String aRegex : regex) {
+        temp = temp.replaceAll(aRegex, "");
       }
       keywordExtractor.addForExtractingKeywords(temp);
     }

@@ -20,6 +20,7 @@ public abstract class UrlCache {
   public abstract void scrap();
 
   public String getHostName(String url) {
+    url = url.toLowerCase();
     if (url.startsWith("https://")) url = url.substring(8);
     if (url.startsWith("http://")) url = url.substring(7);
     if (url.startsWith("www.")) url = url.substring(4);

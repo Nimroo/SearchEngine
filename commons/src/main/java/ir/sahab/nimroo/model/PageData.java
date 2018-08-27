@@ -6,6 +6,8 @@ public class PageData { // todo h1, h2, ...
   private String url;
   private String title;
   private String text;
+  private String h1;
+  private ArrayList<String> h2;
   private ArrayList<Link> links;
   private ArrayList<Meta> metas;
 
@@ -31,6 +33,22 @@ public class PageData { // todo h1, h2, ...
 
   public void setText(String text) {
     this.text = text;
+  }
+
+  public String getH1() {
+    return h1;
+  }
+
+  public void setH1(String h1) {
+    this.h1 = h1;
+  }
+
+  public ArrayList<String> getH2() {
+    return h2;
+  }
+
+  public void setH2(ArrayList<String> h2) {
+    this.h2 = h2;
   }
 
   public ArrayList<Link> getLinks() {

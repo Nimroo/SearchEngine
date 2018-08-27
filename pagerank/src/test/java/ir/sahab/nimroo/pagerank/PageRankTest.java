@@ -9,6 +9,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import scala.Tuple2;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -27,9 +28,10 @@ public class PageRankTest {
 		pageRank = new PageRank();
 	}
 
-	@Test @Ignore
+	@Test
 	public void calcPageRankTest() {
-		JavaPairRDD<String, Tuple2<Double, List<String>>> sourceRankSinks = makeJavaRDD("pageRankTest.txt");
+		String p = PageRankTest.class.getClassLoader().getResource("pageRankTest.txt").getPath(); // TODO: 8/27/18 correct path
+		JavaPairRDD<String, Tuple2<Double, List<String>>> sourceRankSinks = makeJavaRDD(p);
 
 		for (int i = 0; i < 40; i++) {
 			sourceRankSinks = pageRank.calcPageRank(sourceRankSinks);

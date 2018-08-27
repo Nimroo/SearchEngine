@@ -1,5 +1,6 @@
 package ir.sahab.nimroo.crawler.parser;
 
+import ir.sahab.nimroo.crawler.util.LinkNormalizer;
 import ir.sahab.nimroo.model.Meta;
 import ir.sahab.nimroo.model.PageData;
 import ir.sahab.nimroo.model.Link;
@@ -17,7 +18,6 @@ import java.util.Set;
 public class HtmlParser {
   private PageData pageData = new PageData();
   private Set<Link> linkSet = new HashSet<>();
-  //private ArrayList<Link> links = new ArrayList<>();
   private ArrayList<Meta> metas = new ArrayList<>();
   private String urlString;
 
@@ -30,25 +30,32 @@ public class HtmlParser {
     Element bodyElement = document.select("body").first();
 
     pageData.setTitle(document.title());
-    pageData.setText(bodyElement.text());
+    if (bodyElement != null)
+      pageData.setText(bodyElement.text());
 
     Elements aElements = document.select("a");
 
     for (Element aElement : aElements) {
       String href = aElement.attr("href");
+      href = LinkNormalizer.normalize(href);
+
       href = getCompleteUrl2(urlString, href);
       if (!isValid(href)) {
         continue;
       }
+      if (href.startsWith("http://www.")){
+        href = "http://" + href.substring(11);
+      }
+      if (href.startsWith("https://www.")) {
+        href = "https://" + href.substring(12);
+      }
       String anchor = aElement.text();
       Link link = new Link();
       link.setAnchor(anchor);
-
       link.setLink(href);
 
       linkSet.add(link);
     }
-
     pageData.setLinks(new ArrayList<>(linkSet));
 
     Elements metaElements = document.select("meta");
@@ -65,13 +72,18 @@ public class HtmlParser {
 
     pageData.setMetas(metas);
 
+    setH1H2(document);
+
     return pageData;
   }
 
   String getCompleteUrl2(String url, String relativeUrl) {
-
     if (relativeUrl.startsWith("http://") || relativeUrl.startsWith("https://")) {
       return relativeUrl;
+    }
+
+    if (relativeUrl.contains(":")) {
+      return "#";
     }
 
     if(relativeUrl.startsWith("..")) {
@@ -185,8 +197,10 @@ public class HtmlParser {
       return false;
     if (url.contains("://") && !url.startsWith("http://") && !url.startsWith("https://"))
       return false;
-    if (url.startsWith("mailto:"))
-      return false;
+
+//    if (url.startsWith("mailto:"))
+//      return false;
+
     int lastSlash = url.lastIndexOf('/');
     int lastDot = url.lastIndexOf('.');
     if (url.startsWith("http://") || url.startsWith("https://")) {
@@ -199,5 +213,20 @@ public class HtmlParser {
 	    	return false;
     }
     return true;
+  }
+
+
+  private void setH1H2(Document document) {
+    Element h1Element = document.select("h1").first();
+    if (h1Element != null) {
+      pageData.setH1(h1Element.text());
+    }
+
+    Elements h2Elements = document.select("h2");
+    ArrayList<String> h2 = new ArrayList<>();
+    for (Element h2Element: h2Elements) {
+      h2.add(h2Element.text());
+    }
+    pageData.setH2(h2);
   }
 }

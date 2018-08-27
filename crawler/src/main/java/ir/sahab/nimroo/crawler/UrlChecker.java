@@ -1,6 +1,7 @@
 package ir.sahab.nimroo.crawler;
 
 import ir.sahab.nimroo.crawler.cache.DummyUrlCache;
+import ir.sahab.nimroo.crawler.util.LinkNormalizer;
 import ir.sahab.nimroo.hbase.HBase;
 import org.apache.log4j.Logger;
 
@@ -20,6 +21,7 @@ public class UrlChecker implements Runnable {
     }
 
     public void submit(String link) {
+        link = getNormalUrl(link);
         if (dummyUrlCache.add(link)) {
             logger.info("checked with lru->  link: " + link);
             try {
@@ -39,7 +41,6 @@ public class UrlChecker implements Runnable {
             try {
                 link = linkQueue.take();
                 logger.info("UrlChecker takeLink: " + link);
-                HBase.getInstance();
                 if (!HBase.getInstance().isDuplicateUrl(link)) {
                     logger.info("checked with hBase->  link: " + link);
                     linkShuffler.submitLink(link);
@@ -51,5 +52,12 @@ public class UrlChecker implements Runnable {
 
     }
 
+    private String getNormalUrl(String url) {
+        String link = LinkNormalizer.normalize(url);
+        if (link.startsWith("https://")) link = link.substring(8);
+        if (link.startsWith("http://"))  link = link.substring(7);
+        if (link.startsWith("www."))     link = link.substring(4);
+        return link;
+    }
 }
 
