@@ -1,23 +1,21 @@
 package ir.sahab.nimroo.hbase;
 
+import ir.sahab.nimroo.Config;
 import ir.sahab.nimroo.model.PageData;
 import ir.sahab.nimroo.kafka.KafkaHtmlConsumer;
 import ir.sahab.nimroo.serialization.LinkArraySerializer;
 import ir.sahab.nimroo.serialization.PageDataSerializer;
+import org.apache.hadoop.fs.Path;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.*;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 import java.util.concurrent.*;
 
 import static org.apache.hadoop.hbase.util.Bytes.toBytes;
@@ -25,16 +23,26 @@ import static org.apache.hadoop.hbase.util.Bytes.toBytes;
 
 public class HBase {
 
-  private static HBase ourInstance = new HBase();
+  private static HBase ourInstance;
 
   public static HBase getInstance() {
-    return ourInstance;
+      if (ourInstance == null) {
+          synchronized (HBase.class) {
+              if (ourInstance == null) {
+                  try {
+                      ourInstance = new HBase();
+                  }
+                  catch (Exception e) {
+                      e.printStackTrace();
+                  }
+              }
+          }
+      }
+      return ourInstance;
   }
 
   private static final Logger logger = Logger.getLogger(HBase.class);
   private Configuration config;
-  private String hbaseSitePath;
-  private String coreSitePath;
   private String linksFamily;
   private String pageDataFamily;
   private String pageRankFamily;
@@ -49,23 +57,16 @@ public class HBase {
   static long firstStartTime;
 
   private HBase() {
+    logger.info("Hbase constructor");
+
     firstStartTime = System.currentTimeMillis();
-    String appConfigPath = "app.properties";
-    Properties properties = new Properties();
-    try (FileInputStream fis = new FileInputStream(appConfigPath)) {
-      properties.load(fis);
-      coreSitePath = properties.getProperty("core.site.path");
-      hbaseSitePath = properties.getProperty("hbase.site.path");
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
     executorService =
         new ThreadPoolExecutor(15, 15, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(1000));
     kafkaHtmlConsumer = new KafkaHtmlConsumer();
-    PropertyConfigurator.configure("log4j.properties");
     config = HBaseConfiguration.create();
-    config.addResource(new Path(hbaseSitePath));
-    config.addResource(new Path(coreSitePath));
+    config.addResource(new Path(Config.hBaseSite));
+    config.addResource(new Path(Config.hBaseCoreSite));
+    logger.info("hbase configs are loaded !!!");
     tableName = "nimroo";
     linksFamily = "links";
     pageDataFamily = "pageData";
@@ -92,14 +93,6 @@ public class HBase {
     } catch (IOException e) {
       return null;
     }
-  }
-
-  public void setHbaseSitePath(String hbaseSitePath) {
-    this.hbaseSitePath = hbaseSitePath;
-  }
-
-  public void setCoreSitePath(String coreSitePath) {
-    this.coreSitePath = coreSitePath;
   }
 
   public void createTable() throws IOException {
@@ -147,6 +140,7 @@ public class HBase {
   }
 
   public boolean isDuplicateUrl(String link) {
+    logger.trace("isDuplicateUrl is called !!!");
     return isUrlExist(link, defTable);
   }
 
@@ -316,3 +310,4 @@ public class HBase {
     }
   }
 }
+
