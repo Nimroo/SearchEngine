@@ -11,12 +11,12 @@
   <version>1.0-SNAPSHOT</version>
   <modules>
     <module>commons</module>
+    <module>crawler</module>
     <module>news</module>
     <module>search</module>
-    <module>crawler</module>
     <module>pagerank</module>
     <module>mapreduce</module>
-    <module>other</module>
+    <module>other</module> 
   </modules>
 
   <name>nimroo</name>
