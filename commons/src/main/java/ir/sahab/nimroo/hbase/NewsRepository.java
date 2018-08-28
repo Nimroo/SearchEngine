@@ -42,11 +42,13 @@ public class NewsRepository {
   private NewsRepository() {
     logger = Logger.getLogger(NewsRepository.class);
     config = HBaseConfiguration.create();
+    if(Config.hBaseSite == null || Config.hadoopCoreSite == null){
+      logger.error("please enter hbaseSite abs hadoopCoreSite with correct format.");
+    }
     config.addResource(new Path(Config.hBaseSite));
-    config.addResource(new Path(Config.hBaseCoreSite));
+    config.addResource(new Path(Config.hadoopCoreSite));
     tableName = "news";
     agencyFamily= "newsAgency";
-
 
     try {
       createTable();
