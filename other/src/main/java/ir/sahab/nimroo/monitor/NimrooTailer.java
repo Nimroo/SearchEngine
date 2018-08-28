@@ -32,7 +32,8 @@ public class NimrooTailer implements TailerListener {
 
     @Override
     public void handle(String s) {
-        System.out.println(s);
+        //TODO ali Sout
+//        System.out.println(s);
         handles.forEach((key, value) -> {
             if (key.matcher(s).find()) {
                 value.accept(s);
