@@ -1,5 +1,6 @@
 package ir.sahab.nimroo.rss;
 
+import ir.sahab.nimroo.Config;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
@@ -19,6 +20,7 @@ public class Controller {
   }
 
   public static void main(String[] args) {
+    Config.load();
     RSSService rssService = new RSSService();
     rssService.runNewsUpdater();
   }
