@@ -21,9 +21,5 @@ public class Controller {
   public static void main(String[] args) {
     RSSService rssService = new RSSService();
     rssService.runNewsUpdater();
-    StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.append("d");
-    stringBuilder.toString();
-
   }
 }
