@@ -37,7 +37,7 @@ public class HtmlParser {
 
     for (Element aElement : aElements) {
       String href = aElement.attr("href");
-      href = LinkNormalizer.normalize(href);
+      href = LinkNormalizer.getNormalizedUrl(href);
 
       href = getCompleteUrl2(urlString, href);
       if (!isValid(href)) {
