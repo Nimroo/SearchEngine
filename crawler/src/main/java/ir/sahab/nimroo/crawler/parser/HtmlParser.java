@@ -82,7 +82,7 @@ public class HtmlParser {
       return relativeUrl;
     }
 
-    if (relativeUrl.contains(":")) {
+    if (relativeUrl.startsWith("javascript:")) {
       return "#";
     }
 
@@ -198,8 +198,8 @@ public class HtmlParser {
     if (url.contains("://") && !url.startsWith("http://") && !url.startsWith("https://"))
       return false;
 
-//    if (url.startsWith("mailto:"))
-//      return false;
+    if (url.startsWith("mailto:"))
+      return false;
 
     int lastSlash = url.lastIndexOf('/');
     int lastDot = url.lastIndexOf('.');

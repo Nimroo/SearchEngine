@@ -57,35 +57,75 @@ public class ElasticClient {
       return;
     }
     CreateIndexRequest createIndexRequest = new CreateIndexRequest(Config.elasticsearchIndexName);
-    XContentBuilder builder = XContentFactory.jsonBuilder();
-    builder.startObject();
+    XContentBuilder settings = XContentFactory.jsonBuilder();
+    settings.startObject();
     {
-      builder.startObject("_doc");
+      settings.startObject("index");
       {
-        builder.startObject("_source");
-        {
-          builder.field("enabled", "false");
-        }
-        builder.endObject();
-        builder.startObject("properties");
-        {
-          builder.startObject("url");
-          {
-            builder.field("type", "text");
-            builder.field("store", "true");
-          }
-          builder.endObject();
-        }
-        builder.endObject();
+        settings.field("number_of_shards", 6);
+        settings.field("number_of_replicas", 1);
       }
-      builder.endObject();
+      settings.endObject();
     }
-    builder.endObject();
-    createIndexRequest.mapping("_doc", builder);
+    settings.endObject();
+    XContentBuilder mapping = XContentFactory.jsonBuilder();
+    mapping.startObject();
+    {
+      mapping.startObject("_doc");
+      {
+        mapping.startObject("_source");
+        {
+          mapping.field("enabled", "true");
+        }
+        mapping.endObject();
+        mapping.startObject("properties");
+        {
+          mapping.startObject("title");
+          {
+            mapping.field("type", "text");
+            mapping.field("analyzer", "english");
+            mapping.field("search_analyzer", "english");
+          }
+          mapping.endObject();
+          mapping.startObject("text");
+          {
+            mapping.field("type", "text");
+            mapping.field("analyzer", "english");
+            mapping.field("search_analyzer", "english");
+          }
+          mapping.endObject();
+          mapping.startObject("description");
+          {
+            mapping.field("type", "text");
+            mapping.field("analyzer", "english");
+            mapping.field("search_analyzer", "english");
+          }
+          mapping.endObject();
+          mapping.startObject("keywords");
+          {
+            mapping.field("type", "text");
+            mapping.field("analyzer", "english");
+            mapping.field("search_analyzer", "english");
+          }
+          mapping.endObject();
+          mapping.startObject("anchors");
+          {
+            mapping.field("type", "text");
+            mapping.field("analyzer", "english");
+            mapping.field("search_analyzer", "english");
+          }
+          mapping.endObject();
+        }
+        mapping.endObject();
+      }
+      mapping.endObject();
+    }
+    mapping.endObject();
+    createIndexRequest.mapping("_doc", mapping).settings(settings);
     client.indices().create(createIndexRequest);
   }
 
-  public synchronized void addToBulkOfElastic(PageData pageData, String anchors, String index)
+  public synchronized void addToBulkOfElastic(PageData pageData, String id, String index)
       throws IOException {
     String url = pageData.getUrl();
     String title = pageData.getTitle();
@@ -109,9 +149,9 @@ public class ElasticClient {
             .field("text", text)
             .field("description", description)
             .field("keywords", keywords)
-            .field("anchors", anchors)
+            .field("anchors", "")
             .endObject();
-    request.add(new IndexRequest(index, "_doc").source(builder));
+    request.add(new IndexRequest(index, "_doc", id).source(builder));
   }
 
   public synchronized void addBulkToElastic() throws IOException {
@@ -174,7 +214,7 @@ public class ElasticClient {
     SearchResponse searchResponse = client.search(searchRequest);
     SearchHits hits = searchResponse.getHits();
     SearchHit[] searchHits = hits.getHits();
-      HashMap<String, Double> answer = new HashMap<>();
+    HashMap<String, Double> answer = new HashMap<>();
     for (SearchHit hit : searchHits) {
       answer.put(hit.field("url").getValue().toString(), (double) hit.getScore());
     }
@@ -238,9 +278,9 @@ public class ElasticClient {
     SearchResponse searchResponse = client.search(searchRequest);
     SearchHits hits = searchResponse.getHits();
     SearchHit[] searchHits = hits.getHits();
-      HashMap<String, Double> answer = new HashMap<>();
+    HashMap<String, Double> answer = new HashMap<>();
     for (SearchHit hit : searchHits) {
-      answer.put(hit.field("url").getValue().toString(),(double) hit.getScore());
+      answer.put(hit.field("url").getValue().toString(), (double) hit.getScore());
     }
     return answer;
   }
