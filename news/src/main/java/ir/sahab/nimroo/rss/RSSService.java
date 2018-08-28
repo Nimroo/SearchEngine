@@ -1,6 +1,6 @@
 package ir.sahab.nimroo.rss;
 
-import ir.sahab.nimroo.hbase.HBase;
+import ir.sahab.nimroo.hbase.NewsRepository;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -37,7 +37,7 @@ public class RSSService {
   private void updateNews() throws IOException {
     RSSService rssService = new RSSService();
     ResultScanner scanner = null;
-    scanner = HBase.getInstance().getResultScanner("news", "newsAgency");
+    scanner = NewsRepository.getInstance().getResultScanner("news", "newsAgency");
     while (true) {
       try {
         for (Result result = scanner.next(); (result != null); result = scanner.next()) {
@@ -66,7 +66,7 @@ public class RSSService {
 
     if(!rssData.isEmpty()) {
       try {
-        HBase.getInstance().putToHBase("news","newsAgency",
+        NewsRepository.getInstance().putToTable("newsAgency",
             Bytes.toBytes("last"), Bytes.toBytes(DigestUtils.md5Hex(rssUrl)), Bytes.toBytes(rssData.get(0).get("link")));
       } catch (IOException e) {
         logger.warn(e);
