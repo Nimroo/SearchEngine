@@ -92,7 +92,6 @@ public class CrawlerRepository {
 
     byte[][] regions =
         new byte[][] {
-          toBytes("0"),
           toBytes("1"),
           toBytes("2"),
           toBytes("3"),

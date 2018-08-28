@@ -84,7 +84,6 @@ public class NewsRepository {
 
     byte[][] regions =
         new byte[][] {
-            toBytes("0"),
             toBytes("4"),
             toBytes("8"),
             toBytes("c")
