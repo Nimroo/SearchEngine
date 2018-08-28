@@ -170,4 +170,15 @@ public class CrawlerRepository {
     }
     table.put(put);
   }
+
+  public double getPageRank(String link){
+    try {
+      return Bytes.toDouble(getFromTable(pageRankFamily,
+          Bytes.toBytes("pageRank"),
+          Bytes.toBytes(DigestUtils.md5Hex(link)))
+          .getValue(toBytes("pageRank"), toBytes("pageRank")));
+    } catch (IOException | NullPointerException e) {
+      return 0.50;
+    }
+  }
 }
