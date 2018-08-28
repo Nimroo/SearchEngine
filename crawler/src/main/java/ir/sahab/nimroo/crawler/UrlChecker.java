@@ -2,7 +2,7 @@ package ir.sahab.nimroo.crawler;
 
 import ir.sahab.nimroo.crawler.cache.DummyUrlCache;
 import ir.sahab.nimroo.crawler.util.LinkNormalizer;
-import ir.sahab.nimroo.hbase.HBase;
+import ir.sahab.nimroo.hbase.CrawlerRepository;
 import org.apache.log4j.Logger;
 
 import java.util.concurrent.ArrayBlockingQueue;
@@ -41,7 +41,7 @@ public class UrlChecker implements Runnable {
             try {
                 link = linkQueue.take();
                 logger.info("UrlChecker takeLink: " + link);
-                if (!HBase.getInstance().isDuplicateUrl(link)) {
+                if (!CrawlerRepository.getInstance().isDuplicateUrl(link)) {
                     logger.info("checked with hBase->  link: " + link);
                     linkShuffler.submitLink(link);
                 }
