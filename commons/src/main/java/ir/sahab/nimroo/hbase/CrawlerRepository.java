@@ -45,7 +45,6 @@ public class CrawlerRepository {
   private Table table;
 
   private CrawlerRepository() {
-    PropertyConfigurator.configure(CrawlerRepository.class.getClassLoader().getResource("log4j.properties"));
     logger = Logger.getLogger(CrawlerRepository.class);
     config = HBaseConfiguration.create();
     config.addResource(new Path(Config.hBaseSite));
