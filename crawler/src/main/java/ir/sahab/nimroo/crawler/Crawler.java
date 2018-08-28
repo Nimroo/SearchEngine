@@ -8,8 +8,6 @@ import ir.sahab.nimroo.crawler.parser.HtmlParser;
 import ir.sahab.nimroo.crawler.util.Language;
 import ir.sahab.nimroo.kafka.KafkaHtmlProducer;
 import ir.sahab.nimroo.kafka.KafkaLinkConsumer;
-import ir.sahab.nimroo.kafka.KafkaLinkProducer;
-import ir.sahab.nimroo.model.Link;
 import ir.sahab.nimroo.model.PageData;
 import ir.sahab.nimroo.serialization.PageDataSerializer;
 import javafx.util.Pair;

@@ -39,7 +39,7 @@ public class HBasePageRankFilter {
 		hBaseConfiguration.set(TableInputFormat.INPUT_TABLE, "nimroo");
 		hBaseConfiguration.set(TableInputFormat.SCAN_COLUMN_FAMILY, "pageRank");
 //		hBaseConfiguration.set(TableInputFormat.SCAN_COLUMNS, "myUrl myLinks myPageRank");
-		hBaseConfiguration.addResource(Config.hBaseCoreSite);
+		hBaseConfiguration.addResource(Config.hadoopCoreSite);
 		hBaseConfiguration.addResource(Config.hBaseSite);
 
 		JavaPairRDD<ImmutableBytesWritable, Result> hBaseRDD = javaSparkContext

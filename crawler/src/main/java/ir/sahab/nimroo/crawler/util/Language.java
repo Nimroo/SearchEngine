@@ -8,8 +8,10 @@ import com.optimaize.langdetect.profiles.LanguageProfile;
 import com.optimaize.langdetect.profiles.LanguageProfileReader;
 import com.optimaize.langdetect.text.CommonTextObjectFactories;
 import com.optimaize.langdetect.text.TextObjectFactory;
+import ir.sahab.nimroo.crawler.Crawler;
 import java.io.IOException;
 import java.util.List;
+import org.apache.log4j.Logger;
 
 /**
  * @author ArminF96
@@ -22,6 +24,7 @@ public class Language {
   private LanguageDetector languageDetector;
   private TextObjectFactory textObjectFactory;
   private double acceptProbability;
+  private Logger logger = Logger.getLogger(Language.class);
 
   public static Language getInstance() {
     return ourInstance;
@@ -51,7 +54,7 @@ public class Language {
 
   public boolean detector(String text) {
     if (!flag) {
-      System.err.println("error happen in language detector!");
+      logger.error("error happen in language detector!");
       return false;
     }
 //    TextObject textObject = textObjectFactory.forText(text);

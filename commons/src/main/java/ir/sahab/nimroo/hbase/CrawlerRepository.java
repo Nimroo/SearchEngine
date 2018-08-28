@@ -48,7 +48,7 @@ public class CrawlerRepository {
     logger = Logger.getLogger(CrawlerRepository.class);
     config = HBaseConfiguration.create();
     config.addResource(new Path(Config.hBaseSite));
-    config.addResource(new Path(Config.hBaseCoreSite));
+    config.addResource(new Path(Config.hadoopCoreSite));
     tableName = "crawler";
     anchorFamily = "anchor";
     outLinkFamily = "outLink";
