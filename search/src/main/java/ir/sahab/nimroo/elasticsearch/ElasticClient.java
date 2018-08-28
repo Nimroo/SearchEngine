@@ -11,6 +11,7 @@ import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -152,6 +153,40 @@ public class ElasticClient {
             .field("anchors", "")
             .endObject();
     request.add(new IndexRequest(index, "_doc", id).source(builder));
+  }
+
+  public synchronized void addDocumentUpdateToBulk(PageData pageData, String id, String index)
+      throws IOException {
+    String url = pageData.getUrl();
+    String title = pageData.getTitle();
+    String text = pageData.getText();
+    String description = null;
+    String keywords = null;
+    if (pageData.getMetas() != null) {
+      for (Meta temp : pageData.getMetas()) {
+        if (temp.getName().equals("description") && temp.getContent() != null) {
+          description = temp.getContent();
+        } else if (temp.getName().equals("keywords") && temp.getContent() != null) {
+          keywords = temp.getContent();
+        }
+      }
+    }
+    XContentBuilder builder =
+        jsonBuilder()
+            .startObject()
+            .field("url", url)
+            .field("title", title)
+            .field("text", text)
+            .field("description", description)
+            .field("keywords", keywords)
+            .endObject();
+    request.add(new UpdateRequest(index, "_doc", id).doc(builder));
+  }
+
+  public synchronized void addAnchorUpdateToBulk(String anchors, String id, String index)
+      throws IOException {
+    XContentBuilder builder = jsonBuilder().startObject().field("anchors", anchors).endObject();
+    request.add(new UpdateRequest(index, "_doc", id).doc(builder));
   }
 
   public synchronized void addBulkToElastic() throws IOException {
