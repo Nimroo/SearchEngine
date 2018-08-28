@@ -21,7 +21,7 @@ public class UrlChecker implements Runnable {
     }
 
     public void submit(String link) {
-        link = getNormalUrl(link);
+        link = LinkNormalizer.getSimpleUrl(link);
         if (dummyUrlCache.add(link)) {
             logger.info("checked with lru->  link: " + link);
             try {
@@ -52,12 +52,6 @@ public class UrlChecker implements Runnable {
 
     }
 
-    private String getNormalUrl(String url) {
-        String link = LinkNormalizer.normalize(url);
-        if (link.startsWith("https://")) link = link.substring(8);
-        if (link.startsWith("http://"))  link = link.substring(7);
-        if (link.startsWith("www."))     link = link.substring(4);
-        return link;
-    }
+
 }
 
