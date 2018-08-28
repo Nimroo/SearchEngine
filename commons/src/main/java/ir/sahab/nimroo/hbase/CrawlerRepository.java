@@ -28,6 +28,7 @@ import org.apache.log4j.Logger;
 public class CrawlerRepository {
 
   private static CrawlerRepository ourInstance = new CrawlerRepository();
+
   public static CrawlerRepository getInstance() {
     return ourInstance;
   }
@@ -91,22 +92,22 @@ public class CrawlerRepository {
 
     byte[][] regions =
         new byte[][] {
-            toBytes("0"),
-            toBytes("1"),
-            toBytes("2"),
-            toBytes("3"),
-            toBytes("4"),
-            toBytes("5"),
-            toBytes("6"),
-            toBytes("7"),
-            toBytes("8"),
-            toBytes("9"),
-            toBytes("a"),
-            toBytes("b"),
-            toBytes("c"),
-            toBytes("d"),
-            toBytes("e"),
-            toBytes("f")
+          toBytes("0"),
+          toBytes("1"),
+          toBytes("2"),
+          toBytes("3"),
+          toBytes("4"),
+          toBytes("5"),
+          toBytes("6"),
+          toBytes("7"),
+          toBytes("8"),
+          toBytes("9"),
+          toBytes("a"),
+          toBytes("b"),
+          toBytes("c"),
+          toBytes("d"),
+          toBytes("e"),
+          toBytes("f")
         };
     admin.createTable(tableDescriptor, regions);
   }
@@ -156,16 +157,15 @@ public class CrawlerRepository {
     table.put(put);
   }
 
-  public Result getFromTable(String family, byte[] column, byte[] key)
-      throws IOException {
+  public Result getFromTable(String family, byte[] column, byte[] key) throws IOException {
     Get get = new Get(key).addColumn(Bytes.toBytes(family), column);
     return table.get(get);
   }
 
-  public void putToTable(String family, byte[] key, ArrayList< Pair<byte[] ,byte[]> > columns)
+  public void putToTable(String family, byte[] key, ArrayList<Pair<byte[], byte[]>> columns)
       throws IOException {
     Put put = new Put(key);
-    for (Pair pair : columns){
+    for (Pair pair : columns) {
       put.addColumn(Bytes.toBytes(family), (byte[]) pair.getFirst(), (byte[]) pair.getSecond());
     }
     table.put(put);

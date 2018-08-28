@@ -64,24 +64,27 @@ public class RSSService {
 
     ArrayList<HashMap<String, String>> rssData = parsRSS(getRSSDocument(rssUrl));
 
-    if(!rssData.isEmpty()) {
+    if (!rssData.isEmpty()) {
       try {
-        NewsRepository.getInstance().putToTable("newsAgency",
-            Bytes.toBytes("last"), Bytes.toBytes(DigestUtils.md5Hex(rssUrl)), Bytes.toBytes(rssData.get(0).get("link")));
+        NewsRepository.getInstance()
+            .putToTable(
+                "newsAgency",
+                Bytes.toBytes("last"),
+                Bytes.toBytes(DigestUtils.md5Hex(rssUrl)),
+                Bytes.toBytes(rssData.get(0).get("link")));
       } catch (IOException e) {
         logger.warn(e);
       }
     }
 
-    for(HashMap hashMap : rssData){
-      if(last.equals(hashMap.get("link")))
-        break;
+    for (HashMap hashMap : rssData) {
+      if (last.equals(hashMap.get("link"))) break;
       logger.info(hashMap.get("title"));
     }
-    //TODO
+    // TODO
   }
 
-  ArrayList<HashMap<String, String>> parsRSS(Document domTree){
+  ArrayList<HashMap<String, String>> parsRSS(Document domTree) {
     ArrayList<HashMap<String, String>> rssDataMap = new ArrayList<>();
     for (int i = 0; i < domTree.getElementsByTagName("item").getLength(); i++) {
       rssDataMap.add(new HashMap<>());
@@ -119,9 +122,7 @@ public class RSSService {
         .getTextContent();
   }
 
-  private void crawlNews(){
-
-  }
+  private void crawlNews() {}
 
   private Document getRSSDocument(String rssUrl) {
     DocumentBuilderFactory domBuilderFactory = DocumentBuilderFactory.newInstance();
