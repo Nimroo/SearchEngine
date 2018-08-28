@@ -76,7 +76,7 @@ public class RSSService {
     for(HashMap hashMap : rssData){
       if(last.equals(hashMap.get("link")))
         break;
-      System.out.println(hashMap.get("title"));
+      logger.info(hashMap.get("title"));
     }
     //TODO
   }
