@@ -24,7 +24,6 @@ import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.Pair;
 import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
 
 public class CrawlerRepository {
 
@@ -36,13 +35,13 @@ public class CrawlerRepository {
   private Logger logger;
   private Configuration config;
   private String tableName;
+  private Connection connection;
+  private Table table;
 
   private String anchorFamily;
   private String outLinkFamily;
   private String markFamily;
   private String pageRankFamily;
-  private Connection connection;
-  private Table table;
 
   private CrawlerRepository() {
     logger = Logger.getLogger(CrawlerRepository.class);
