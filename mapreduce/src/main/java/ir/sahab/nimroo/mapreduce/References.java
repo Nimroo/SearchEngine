@@ -33,13 +33,16 @@ public class References {
   private References() {
   }
 
-  public class RefMapper extends TableMapper<Text, LongWritable> {
+  public static class RefMapper extends TableMapper<Text, LongWritable> {
     long numRecords = 0;
     @Override
     public void map(ImmutableBytesWritable row, Result values, Context context)
         throws InvalidProtocolBufferException {
       LongWritable one = new LongWritable(1);
-      ArrayList<Link> myLinks = LinkArraySerializer.getInstance().deserialize(values.getValue(Bytes.toBytes("pageRank"), Bytes.toBytes("myLinks")));
+      ArrayList<Link> myLinks =
+          LinkArraySerializer.getInstance()
+              .deserialize(values.getValue(Bytes.toBytes("pageRank"),
+                                           Bytes.toBytes("myLinks")));
       for (Link link : myLinks){
           try {
             context.write(new Text(DigestUtils.md5Hex(link.getLink())), one);
@@ -53,7 +56,7 @@ public class References {
     }
   }
 
-  public class RefReducer extends TableReducer<Text, LongWritable, Text> {
+  public static class RefReducer extends TableReducer<Text, LongWritable, Text> {
 
     @Override
     public void reduce(Text key, Iterable<LongWritable> values, Context context) {
@@ -70,7 +73,7 @@ public class References {
     }
   }
 
-  public class RefCombiner extends Reducer<Text, LongWritable, Text, LongWritable> {
+  public static class RefCombiner extends Reducer<Text, LongWritable, Text, LongWritable> {
 
     public void reduce(Text key, Iterable<LongWritable> values, Context context) {
       long sum = 0;

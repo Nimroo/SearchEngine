@@ -16,6 +16,7 @@ import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+//TODO
 public class RssNews {
   private ArrayList<Site> listOfSites;
   private final Logger logger = Logger.getLogger(RssNews.class);

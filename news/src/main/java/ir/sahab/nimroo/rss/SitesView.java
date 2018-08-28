@@ -7,6 +7,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+//TODO
 public class SitesView {
   private RssNews rssNews;
   private ArrayList<String> stopWords;

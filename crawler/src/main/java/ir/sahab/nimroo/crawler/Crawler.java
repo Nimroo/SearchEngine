@@ -6,7 +6,6 @@ import ir.sahab.nimroo.crawler.cache.DummyDomainCache;
 import ir.sahab.nimroo.crawler.cache.DummyUrlCache;
 import ir.sahab.nimroo.crawler.parser.HtmlParser;
 import ir.sahab.nimroo.crawler.util.Language;
-import ir.sahab.nimroo.hbase.HBase;
 import ir.sahab.nimroo.kafka.KafkaHtmlProducer;
 import ir.sahab.nimroo.kafka.KafkaLinkConsumer;
 import ir.sahab.nimroo.kafka.KafkaLinkProducer;

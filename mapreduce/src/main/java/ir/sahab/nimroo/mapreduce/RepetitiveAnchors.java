@@ -64,7 +64,6 @@ public class RepetitiveAnchors {
     uselessAnchors.add("saturday");
     uselessAnchors.add("sunday");
 
-    uselessAnchors.add("\\xe2\\x96\\xba");
     uselessAnchors.add("older posts");
     uselessAnchors.add("privacy policy");
     uselessAnchors.add("links to this post");
@@ -92,8 +91,6 @@ public class RepetitiveAnchors {
     uselessAnchors.add("??");
     uselessAnchors.add("???");
     uselessAnchors.add("????");
-    uselessAnchors.add(
-        "\\xe8\\xbe\\xa3\\xe5\\xa6\\xb9\\xe7\\xbe\\x8e\\xe5\\xa5\\xb3\\xe3\\x8a\\xa3 \\xe8\\xbe\\xa3\\xe5\\xa6\\xb9\\xe7\\xbe\\x8e\\xe5\\xa5\\xb3\\xe3\\x8a\\xa3 \\xe8\\xbe\\xa3\\xe5\\xa6\\xb9\\xe7\\xbe\\x8e\\xe5\\xa5\\xb3\\xe3\\x8a\\xa3");
     uselessAnchors.add("leave a comment");
     uselessAnchors.add("about");
     uselessAnchors.add("contact");
