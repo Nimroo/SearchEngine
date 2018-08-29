@@ -11,8 +11,8 @@ public class LinkShuffler implements Runnable {
   private final Object LOCK_FOR_WAIT_AND_NOTIFY_PRODUCING = new Object();
   private Logger logger = Logger.getLogger(LinkShuffler.class);
   private KafkaLinkProducer kafkaLinkProducer = new KafkaLinkProducer();
-  private String tempLinkArray[] = new String[Config.shuffelSize];
-  private BlockingQueue<String> linkQueueForShuffle = new ArrayBlockingQueue<>(Config.shuffelerQueueSize);
+  private String tempLinkArray[] = new String[Config.shuffleSize];
+  private BlockingQueue<String> linkQueueForShuffle = new ArrayBlockingQueue<>(Config.shufflerQueueSize);
   private final Object lock = new Object();
 
   public LinkShuffler() {
@@ -37,7 +37,7 @@ public class LinkShuffler implements Runnable {
   public void submitLink(String url) {
     linkQueueForShuffle.add(url);
     logger.info("submitted link: " + url);
-    if(linkQueueForShuffle.size() > Config.shuffelSize) {
+    if(linkQueueForShuffle.size() > Config.shuffleSize) {
         synchronized (LOCK_FOR_WAIT_AND_NOTIFY_PRODUCING) {
             LOCK_FOR_WAIT_AND_NOTIFY_PRODUCING.notify();
         }
@@ -47,17 +47,17 @@ public class LinkShuffler implements Runnable {
 
   private void produceAll() throws InterruptedException {
     synchronized (lock) {
-      if (linkQueueForShuffle.size() < Config.shuffelSize) {
+      if (linkQueueForShuffle.size() < Config.shuffleSize) {
         return;
       }
 
-      for (int i = 0; i < Config.shuffelSize; i++) {
+      for (int i = 0; i < Config.shuffleSize; i++) {
         tempLinkArray[i] = linkQueueForShuffle.take();
       }
 
       for (int i = 0; i < 1000; i++) {
         logger.info("number of produced links:" + i * 100);
-        for (int j = i; j < Config.shuffelSize; j += 1000) {
+        for (int j = i; j < Config.shuffleSize; j += 1000) {
           kafkaLinkProducer.send(Config.kafkaLinkTopicName, tempLinkArray[j], tempLinkArray[j]);
         }
       }

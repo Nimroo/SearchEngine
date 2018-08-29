@@ -55,18 +55,18 @@ public class PageRankLauncher {
 		scan.setCacheBlocks(false);
 		scan.addFamily(Bytes.toBytes("pageRank"));
 
-		logger.info("Configuring hBaseConfiguration");
+		System.out.println("Configuring hBaseConfiguration");
 		hBaseConfiguration = HBaseConfiguration.create();
 		hBaseConfiguration.set(TableInputFormat.INPUT_TABLE, "nimroo");
 		hBaseConfiguration.set(TableInputFormat.SCAN_COLUMN_FAMILY, "pageRank");
 		try {
 			hBaseConfiguration.set(TableInputFormat.SCAN, convertScanToString(scan));
 		} catch (IOException e) {
-			logger.info("hBaseConfiguration set scan failed:\t" + e);
+			System.out.println("hBaseConfiguration set scan failed:\t" + e);
 		}
 		hBaseConfiguration.addResource(Config.hadoopCoreSite);
 		hBaseConfiguration.addResource(Config.hBaseSite);
-		logger.info("hBase configuration done.");
+		System.out.println("hBase configuration done.");
 
 		JavaPairRDD<ImmutableBytesWritable, Result> hBaseRDD = javaSparkContext
 				.newAPIHadoopRDD(hBaseConfiguration, TableInputFormat.class
@@ -118,25 +118,25 @@ public class PageRankLauncher {
 			return new Tuple2<>(source, new Tuple2<>(pairRow._2._1, sinks));
 		});  //adds self_edge and remove # in sinks and remove multiple_edges
 */
-		logger.info("before PageRank calculation");
+		System.out.println("before PageRank calculation");
 		for (int i = 0; i < 30; i++) {
 			sourceRankSinks = pageRank.calcPageRank(sourceRankSinks);
 		}
-		logger.info("after PageRank calculation");
+		System.out.println("after PageRank calculation");
 
 
 		Job job = null;
-		logger.info("start configuring job");
+		System.out.println("start configuring job");
 		try {
 			job = Job.getInstance(hBaseConfiguration);
 			job.getConfiguration().set(TableOutputFormat.OUTPUT_TABLE, outputTable);
 			job.setOutputFormatClass(TableOutputFormat.class);
-			logger.info("Job configured");
+			System.out.println("Job configured");
 		} catch (IOException e) {
-			logger.info("Job not configured.\t" + e);
+			System.out.println("Job not configured.\t" + e);
 		}
 
-		logger.info("creating hBasePuts rdd...");
+		System.out.println("creating hBasePuts rdd...");
 		JavaPairRDD<ImmutableBytesWritable, Put> hBasePuts = sourceRankSinks.mapToPair(sourcePageRankSinks -> {
 			String source = sourcePageRankSinks._1;
 			double newPageRank = sourcePageRankSinks._2._1;
@@ -146,10 +146,10 @@ public class PageRankLauncher {
 
 			return new Tuple2<>(new ImmutableBytesWritable(), put);
 		});
-		logger.info("hBasePuts rdd created.");
+		System.out.println("hBasePuts rdd created.");
 
-		logger.info("saving data in HBase...");
+		System.out.println("saving data in HBase...");
 		hBasePuts.saveAsNewAPIHadoopDataset(job.getConfiguration());
-		logger.info("data saved.");
+		System.out.println("data saved.");
 	}
 }

@@ -1,6 +1,5 @@
 package ir.sahab.nimroo;
 
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
@@ -30,8 +29,8 @@ public class Config {
   public static int linkPartition;
   public static String hadoopCoreSite;
   public static String hBaseSite;
-  public static int shuffelerQueueSize;
-  public static int shuffelSize;
+  public static int shufflerQueueSize;
+  public static int shuffleSize;
 
   public static void load() {
     String appConfigPath = "app.properties";
@@ -64,8 +63,8 @@ public class Config {
       Config.linkPartition = Integer.parseInt(properties.getProperty("kafka.consumer.htmlTopic.partition"));
       Config.hadoopCoreSite = properties.getProperty("core.site.path");
       Config.hBaseSite = properties.getProperty("hbase.site.path");
-      Config.shuffelSize = Integer.parseInt(properties.getProperty("shuffler.shuffle.size"));
-      Config.shuffelerQueueSize = Integer.parseInt(properties.getProperty("shuffler.queue.size"));
+      Config.shuffleSize = Integer.parseInt(properties.getProperty("shuffler.shuffle.size"));
+      Config.shufflerQueueSize = Integer.parseInt(properties.getProperty("shuffler.queue.size"));
 
     } catch (FileNotFoundException e) {
       e.printStackTrace();
