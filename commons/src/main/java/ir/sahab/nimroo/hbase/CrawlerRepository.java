@@ -48,7 +48,7 @@ public class CrawlerRepository {
     logger = Logger.getLogger(CrawlerRepository.class);
     config = HBaseConfiguration.create();
     config.addResource(new Path(Config.hBaseSite));
-    config.addResource(new Path(Config.hBaseCoreSite));
+    config.addResource(new Path(Config.hadoopCoreSite));
     tableName = "crawler";
     anchorFamily = "anchor";
     outLinkFamily = "outLink";
@@ -92,7 +92,6 @@ public class CrawlerRepository {
 
     byte[][] regions =
         new byte[][] {
-          toBytes("0"),
           toBytes("1"),
           toBytes("2"),
           toBytes("3"),
@@ -169,5 +168,16 @@ public class CrawlerRepository {
       put.addColumn(Bytes.toBytes(family), (byte[]) pair.getFirst(), (byte[]) pair.getSecond());
     }
     table.put(put);
+  }
+
+  public double getPageRank(String link){
+    try {
+      return Bytes.toDouble(getFromTable(pageRankFamily,
+          Bytes.toBytes("pageRank"),
+          Bytes.toBytes(DigestUtils.md5Hex(link)))
+          .getValue(toBytes("pageRank"), toBytes("pageRank")));
+    } catch (IOException | NullPointerException e) {
+      return 0.50;
+    }
   }
 }

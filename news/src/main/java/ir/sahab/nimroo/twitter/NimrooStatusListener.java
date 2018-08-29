@@ -36,7 +36,7 @@ public class NimrooStatusListener implements StatusListener {
 
     @Override
     public void onTrackLimitationNotice(int numberOfLimitedStatuses) {
-        System.err.println("onTrackLimitationNotice\t numberOfLimitedStatuse: " + numberOfLimitedStatuses);
+        logger.error("onTrackLimitationNotice\t numberOfLimitedStatuse: " + numberOfLimitedStatuses);
     }
 
     @Override
@@ -46,7 +46,7 @@ public class NimrooStatusListener implements StatusListener {
 
     @Override
     public void onStallWarning(StallWarning warning) {
-        System.err.println("onStallWarning\t warning: " + warning);
+        logger.error("onStallWarning\t warning: " + warning);
     }
 
     @Override

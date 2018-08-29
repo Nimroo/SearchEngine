@@ -28,7 +28,7 @@ public class Config {
   public static int httpSocketTimeout = 5000;
   public static String elasticsearchIndexName;
   public static int linkPartition;
-  public static String hBaseCoreSite;
+  public static String hadoopCoreSite;
   public static String hBaseSite;
   public static int shuffelerQueueSize;
   public static int shuffelSize;
@@ -62,7 +62,7 @@ public class Config {
           Integer.parseInt(properties.getProperty("http.client.perHost"));
       Config.elasticsearchIndexName = properties.getProperty("elasticsearch.index.name");
       Config.linkPartition = Integer.parseInt(properties.getProperty("kafka.consumer.htmlTopic.partition"));
-      Config.hBaseCoreSite = properties.getProperty("core.site.path");
+      Config.hadoopCoreSite = properties.getProperty("core.site.path");
       Config.hBaseSite = properties.getProperty("hbase.site.path");
       Config.shuffelSize = Integer.parseInt(properties.getProperty("shuffler.shuffle.size"));
       Config.shuffelerQueueSize = Integer.parseInt(properties.getProperty("shuffler.queue.size"));

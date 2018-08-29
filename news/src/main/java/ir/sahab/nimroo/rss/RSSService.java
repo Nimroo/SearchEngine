@@ -35,7 +35,6 @@ public class RSSService {
   }
 
   private void updateNews() throws IOException {
-    RSSService rssService = new RSSService();
     ResultScanner scanner = null;
     scanner = NewsRepository.getInstance().getResultScanner("news", "newsAgency");
     while (true) {
@@ -44,7 +43,7 @@ public class RSSService {
           Result finalResult = result;
           executorService.submit(
               () -> {
-                rssService.crawlRSS(finalResult);
+                crawlRSS(finalResult);
               });
         }
         TimeUnit.MINUTES.sleep(10);

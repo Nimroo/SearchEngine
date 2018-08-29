@@ -1,7 +1,6 @@
 package ir.sahab.nimroo.elasticsearch;
 
-import ir.sahab.nimroo.hbase.HBase;
-
+import ir.sahab.nimroo.hbase.CrawlerRepository;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -49,7 +48,7 @@ public class SearchUIConnector {
       HashMap<String, Double> mapForScoring = new HashMap<>();
       HashMap<String, Double> answer = new HashMap<>();
       for (HashMap.Entry<String, Double> temp : links.entrySet()) {
-        double pageRangTemp = HBase.getInstance().getPageRank(temp.getKey());
+        double pageRangTemp = CrawlerRepository.getInstance().getPageRank(temp.getKey());
         if (pageRangTemp == 1d){
           pageRangTemp = 0d;
         }
@@ -64,7 +63,7 @@ public class SearchUIConnector {
             linkOfMaxScore = temp.getKey();
           }
         }
-        double pageRangTemp = HBase.getInstance().getPageRank(linkOfMaxScore);
+        double pageRangTemp = CrawlerRepository.getInstance().getPageRank(linkOfMaxScore);
         if (pageRangTemp == 1d){
           pageRangTemp = 0d;
         }

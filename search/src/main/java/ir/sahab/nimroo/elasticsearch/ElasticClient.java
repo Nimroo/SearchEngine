@@ -11,6 +11,7 @@ import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -51,7 +52,7 @@ public class ElasticClient {
     safeSearch = false;
   }
 
-  public void disableSource() throws IOException {
+  public void createIndex() throws IOException {
     GetIndexRequest getIndexRequest = new GetIndexRequest().indices(Config.elasticsearchIndexName);
     if (client.indices().exists(getIndexRequest)) {
       return;
@@ -108,6 +109,20 @@ public class ElasticClient {
             mapping.field("search_analyzer", "english");
           }
           mapping.endObject();
+          mapping.startObject("h1");
+          {
+            mapping.field("type", "text");
+            mapping.field("analyzer", "english");
+            mapping.field("search_analyzer", "english");
+          }
+          mapping.endObject();
+          mapping.startObject("h2");
+          {
+            mapping.field("type", "text");
+            mapping.field("analyzer", "english");
+            mapping.field("search_analyzer", "english");
+          }
+          mapping.endObject();
           mapping.startObject("anchors");
           {
             mapping.field("type", "text");
@@ -125,11 +140,17 @@ public class ElasticClient {
     client.indices().create(createIndexRequest);
   }
 
-  public synchronized void addToBulkOfElastic(PageData pageData, String id, String index)
+  public synchronized void addDocumentToBulkOfElastic(PageData pageData, String id, String index)
       throws IOException {
     String url = pageData.getUrl();
     String title = pageData.getTitle();
     String text = pageData.getText();
+    String h1 = pageData.getH1();
+    String h2 = "";
+    ArrayList<String> h2List = pageData.getH2();
+    for (int i = 0; i < h2List.size(); i++) {
+      h2 = h2 + " " + h2List.get(i);
+    }
     String description = null;
     String keywords = null;
     if (pageData.getMetas() != null) {
@@ -149,9 +170,53 @@ public class ElasticClient {
             .field("text", text)
             .field("description", description)
             .field("keywords", keywords)
+            .field("h1", h1)
+            .field("h2", h2)
             .field("anchors", "")
             .endObject();
     request.add(new IndexRequest(index, "_doc", id).source(builder));
+  }
+
+  public synchronized void addDocumentUpdateToBulk(PageData pageData, String id, String index)
+      throws IOException {
+    String url = pageData.getUrl();
+    String title = pageData.getTitle();
+    String text = pageData.getText();
+    String h1 = pageData.getH1();
+    String h2 = "";
+    ArrayList<String> h2List = pageData.getH2();
+    for (int i = 0; i < h2List.size(); i++) {
+      h2 = h2 + " " + h2List.get(i);
+    }
+    String description = null;
+    String keywords = null;
+    if (pageData.getMetas() != null) {
+      for (Meta temp : pageData.getMetas()) {
+        if (temp.getName().equals("description") && temp.getContent() != null) {
+          description = temp.getContent();
+        } else if (temp.getName().equals("keywords") && temp.getContent() != null) {
+          keywords = temp.getContent();
+        }
+      }
+    }
+    XContentBuilder builder =
+        jsonBuilder()
+            .startObject()
+            .field("url", url)
+            .field("title", title)
+            .field("text", text)
+            .field("description", description)
+            .field("keywords", keywords)
+            .field("h1", h1)
+            .field("h2", h2)
+            .endObject();
+    request.add(new UpdateRequest(index, "_doc", id).doc(builder));
+  }
+
+  public synchronized void addAnchorUpdateToBulk(String anchors, String id, String index)
+      throws IOException {
+    XContentBuilder builder = jsonBuilder().startObject().field("anchors", anchors).endObject();
+    request.add(new UpdateRequest(index, "_doc", id).doc(builder));
   }
 
   public synchronized void addBulkToElastic() throws IOException {
@@ -192,17 +257,19 @@ public class ElasticClient {
       for (String phrase : obsceneWords) {
         boolQuery.mustNot(
             QueryBuilders.multiMatchQuery(
-                    phrase, "text", "title", "description", "keywords", "anchors")
+                    phrase, "text", "title", "description", "keywords", "h1", "h2", "anchors")
                 .type(MultiMatchQueryBuilder.Type.PHRASE));
       }
     }
     MultiMatchQueryBuilder multiMatchQueryBuilder =
         QueryBuilders.multiMatchQuery(
-            searchText, "text", "title", "description", "keywords", "anchors");
+            searchText, "text", "title", "description", "keywords", "h1", "h2", "anchors");
     multiMatchQueryBuilder.field("text", 5);
     multiMatchQueryBuilder.field("title", 2);
     multiMatchQueryBuilder.field("description", 1);
     multiMatchQueryBuilder.field("keywords", 1);
+    multiMatchQueryBuilder.field("h1", 3);
+    multiMatchQueryBuilder.field("h2", 2);
     multiMatchQueryBuilder.field("anchors", 2);
     boolQuery.must(multiMatchQueryBuilder);
     searchSourceBuilder.query(boolQuery);
@@ -235,37 +302,41 @@ public class ElasticClient {
       for (String phrase : obsceneWords) {
         boolQuery.mustNot(
             QueryBuilders.multiMatchQuery(
-                    phrase, "text", "title", "description", "keywords", "anchors")
+                    phrase, "text", "title", "description", "keywords", "h1", "h2", "anchors")
                 .type(MultiMatchQueryBuilder.Type.PHRASE));
       }
     }
     for (String phrase : mustFind) {
       MultiMatchQueryBuilder multiMatchQueryBuilder =
           QueryBuilders.multiMatchQuery(
-                  phrase, "text", "title", "description", "keywords", "anchors")
+                  phrase, "text", "title", "description", "keywords", "h1", "h2", "anchors")
               .type(MultiMatchQueryBuilder.Type.PHRASE);
       multiMatchQueryBuilder.field("text", 5);
       multiMatchQueryBuilder.field("title", 2);
       multiMatchQueryBuilder.field("description", 1);
       multiMatchQueryBuilder.field("keywords", 1);
+      multiMatchQueryBuilder.field("h1", 3);
+      multiMatchQueryBuilder.field("h2", 2);
       multiMatchQueryBuilder.field("anchors", 2);
       boolQuery.must(multiMatchQueryBuilder);
     }
     for (String phrase : mustNotFind) {
       boolQuery.mustNot(
           QueryBuilders.multiMatchQuery(
-                  phrase, "text", "title", "description", "keywords", "anchors")
+                  phrase, "text", "title", "description", "keywords", "h1", "h2", "anchors")
               .type(MultiMatchQueryBuilder.Type.PHRASE));
     }
     for (String phrase : shouldFind) {
       MultiMatchQueryBuilder multiMatchQueryBuilder =
           QueryBuilders.multiMatchQuery(
-                  phrase, "text", "title", "description", "keywords", "anchors")
+                  phrase, "text", "title", "description", "keywords", "h1", "h2", "anchors")
               .type(MultiMatchQueryBuilder.Type.PHRASE);
       multiMatchQueryBuilder.field("text", 5);
       multiMatchQueryBuilder.field("title", 2);
       multiMatchQueryBuilder.field("description", 1);
       multiMatchQueryBuilder.field("keywords", 1);
+      multiMatchQueryBuilder.field("h1", 3);
+      multiMatchQueryBuilder.field("h2", 2);
       multiMatchQueryBuilder.field("anchors", 2);
       boolQuery.should(multiMatchQueryBuilder);
     }

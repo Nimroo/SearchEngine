@@ -21,7 +21,8 @@ public class JsonRpcSearchService {
 
     @JsonRpcMethod
     public String ping() {
-        System.out.println("ping called");
+        //TODO ali Sout
+//        System.out.println("ping called");
         return "pong";
     }
 

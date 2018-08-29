@@ -30,7 +30,7 @@ public class MeanCalculator {
 		hBaseConfiguration = HBaseConfiguration.create();
 		hBaseConfiguration.set(TableInputFormat.INPUT_TABLE, "PageRankTable");
 		hBaseConfiguration.set(TableInputFormat.SCAN_COLUMN_FAMILY, "PageRankFamily");
-		hBaseConfiguration.addResource(Config.hBaseCoreSite);
+		hBaseConfiguration.addResource(Config.hadoopCoreSite);
 		hBaseConfiguration.addResource(Config.hBaseSite);
 
 		JavaPairRDD<ImmutableBytesWritable, Result> hBaseRDD = javaSparkContext
@@ -49,22 +49,22 @@ public class MeanCalculator {
 		double pageRankSum = pageRanksRDD.reduce((a, b) -> a + b);
 		long num = pageRanksRDD.count();
 
-		System.out.println(pageRankSum);
-		System.out.println(num);
-		System.out.println(pageRankSum / num);
+		logger.info(pageRankSum);
+		logger.info(num);
+		logger.info(pageRankSum / num);
 
 /*		Job job = null;
-		System.out.println("start configuring job");
+		logger.info("start configuring job");
 		try {
 			job = Job.getInstance(hBaseConfiguration);
 			job.getConfiguration().set(TableOutputFormat.OUTPUT_TABLE, "nimroo");
 			job.setOutputFormatClass(TableOutputFormat.class);
-			System.out.println("Job configured");
+			logger.info("Job configured");
 		} catch (IOException e) {
-			System.out.println("Job not configured.\t" + e);
+			logger.info("Job not configured.\t" + e);
 		}
 
-		System.out.println("creating hBasePuts rdd...");
+		logger.info("creating hBasePuts rdd...");
 		JavaPairRDD<ImmutableBytesWritable, Put> hBasePuts = hBaseRDD.mapToPair(pairRow -> {
 			Result result = pairRow._2;
 
@@ -76,10 +76,10 @@ public class MeanCalculator {
 
 			return new Tuple2<>(new ImmutableBytesWritable(), put);
 		});
-		System.out.println("hBasePuts rdd created.");
+		logger.info("hBasePuts rdd created.");
 
-		System.out.println("saving data in HBase...");
+		logger.info("saving data in HBase...");
 		hBasePuts.saveAsNewAPIHadoopDataset(job.getConfiguration());
-		System.out.println("data saved.");*/
+		logger.info("data saved.");*/
 	}
 }
