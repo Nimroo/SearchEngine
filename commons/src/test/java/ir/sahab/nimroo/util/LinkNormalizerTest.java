@@ -1,4 +1,4 @@
-package ir.sahab.nimroo.crawler.util;
+package ir.sahab.nimroo.util;
 
 import org.junit.Test;
 

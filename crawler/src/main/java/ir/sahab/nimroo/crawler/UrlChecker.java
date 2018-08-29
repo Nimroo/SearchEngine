@@ -1,7 +1,7 @@
 package ir.sahab.nimroo.crawler;
 
 import ir.sahab.nimroo.crawler.cache.DummyUrlCache;
-import ir.sahab.nimroo.crawler.util.LinkNormalizer;
+import ir.sahab.nimroo.util.LinkNormalizer;
 import ir.sahab.nimroo.hbase.CrawlerRepository;
 import org.apache.log4j.Logger;
 
