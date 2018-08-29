@@ -31,7 +31,7 @@ public class RSSService {
         RSSService.class.getClassLoader().getResource("log4j.properties"));
     logger = Logger.getLogger(RSSService.class);
     executorService =
-        new ThreadPoolExecutor(20, 20, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(50));
+        new ThreadPoolExecutor(22, 22, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(50));
   }
 
   private void updateNews() throws IOException {
@@ -78,12 +78,9 @@ public class RSSService {
         logger.warn(e);
       }
     }
-
-    System.out.println(rssUrl);
     for (HashMap hashMap : rssData) {
       if (last.equals(hashMap.get("link"))) break;
       logger.info(hashMap.get("title"));
-      System.out.println(hashMap.get("title"));
     }
     // TODO
   }
@@ -136,7 +133,9 @@ public class RSSService {
       domBuilder = domBuilderFactory.newDocumentBuilder();
       url = new URL(rssUrl);
       URLConnection con = url.openConnection();
-      con.setConnectTimeout(5000);
+      con.setConnectTimeout(15000);
+      con.setReadTimeout(15000);
+      con.setRequestProperty("User-Agent","Mozilla/5.0 ( compatible ) ");
       return domBuilder.parse(con.getInputStream());
     } catch (SAXException | IOException | ParserConfigurationException e) {
       logger.error(e);
