@@ -35,17 +35,18 @@ public class RSSService {
   }
 
   private void updateNews() throws IOException {
-    ResultScanner scanner = null;
-    scanner = NewsRepository.getInstance().getResultScanner("news", "newsAgency");
     while (true) {
+      ResultScanner scanner = null;
+      scanner = NewsRepository.getInstance().getResultScanner("newsAgency");
+      logger.info("update News run just now.");
+      for (Result result = scanner.next(); (result != null); result = scanner.next()) {
+        Result finalResult = result;
+        executorService.submit(
+            () -> {
+              crawlRSS(finalResult);
+            });
+      }
       try {
-        for (Result result = scanner.next(); (result != null); result = scanner.next()) {
-          Result finalResult = result;
-          executorService.submit(
-              () -> {
-                crawlRSS(finalResult);
-              });
-        }
         TimeUnit.MINUTES.sleep(10);
       } catch (InterruptedException e) {
         logger.warn("concurrent problem in RSS Controller!\nthread don't want to sleep!!", e);
@@ -60,9 +61,11 @@ public class RSSService {
         Bytes.toString(result.getValue(Bytes.toBytes("newsAgency"), Bytes.toBytes("config")));
     String last =
         Bytes.toString(result.getValue(Bytes.toBytes("newsAgency"), Bytes.toBytes("last")));
-
+    if(rssUrl == null || config == null)
+      return;
+    if(last == null)
+      last = "";
     ArrayList<HashMap<String, String>> rssData = parsRSS(getRSSDocument(rssUrl));
-
     if (!rssData.isEmpty()) {
       try {
         NewsRepository.getInstance()
@@ -76,9 +79,11 @@ public class RSSService {
       }
     }
 
+    System.out.println(rssUrl);
     for (HashMap hashMap : rssData) {
       if (last.equals(hashMap.get("link"))) break;
       logger.info(hashMap.get("title"));
+      System.out.println(hashMap.get("title"));
     }
     // TODO
   }
