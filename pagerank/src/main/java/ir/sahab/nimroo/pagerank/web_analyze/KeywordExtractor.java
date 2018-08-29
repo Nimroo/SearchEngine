@@ -25,16 +25,16 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DomainExtractor {
-	private static Logger logger = Logger.getLogger(DomainExtractor.class);
+public class KeywordExtractor {
+	private static Logger logger = Logger.getLogger(KeywordExtractor.class);
 	private static Configuration hBaseConfiguration = null;
 
-	public void extractDomain() {
+	public void extractKeywords() {
 		Config.load();
 		PropertyConfigurator.configure(DomainExtractor.class.getClassLoader().getResource("log4j.properties"));
 
 		SparkConf sparkConf = new SparkConf();
-		sparkConf.setAppName("Domain Extractor");
+		sparkConf.setAppName("Keyword Extractor");
 		JavaSparkContext javaSparkContext = new JavaSparkContext(sparkConf);
 
 		hBaseConfiguration = HBaseConfiguration.create();
@@ -47,12 +47,12 @@ public class DomainExtractor {
 				javaSparkContext.newAPIHadoopRDD(hBaseConfiguration, TableInputFormat.class,
 						ImmutableBytesWritable.class, Result.class);
 
-		JavaPairRDD<Tuple2<String,String>, Integer> domainSinkDomain = hBaseRDD.flatMapToPair(pairRow -> {
+		JavaPairRDD<Tuple2<String,String>, Double> domainWordScore = hBaseRDD.flatMapToPair(pairRow -> {
 			Result result = pairRow._2;
 			List<Cell> cells = result.listCells();
 
 			String domain = null;
-			List<Tuple2<Tuple2<String,String>, Integer>> domainDomain1 = new ArrayList<>();
+			List<Tuple2<Tuple2<String,String>, Double>> domainWordFirstScore = new ArrayList<>();
 
 			for (Cell cell:cells) {
 				byte[] qualifier = CellUtil.cloneQualifier(cell);
@@ -61,25 +61,25 @@ public class DomainExtractor {
 					domain = LinkNormalizer.getDomain(url);
 				}
 				else {
-					String sinkUrl = Bytes.toString(CellUtil.cloneQualifier(cell));
-					String sinkDomain = LinkNormalizer.getDomain(sinkUrl);
-					domainDomain1.add(new Tuple2<>(new Tuple2<>(domain, sinkDomain), 1));
+					String word = Bytes.toString(CellUtil.cloneQualifier(cell));
+					double score = Bytes.toDouble(CellUtil.cloneValue(cell));
+					domainWordFirstScore.add(new Tuple2<>(new Tuple2<>(domain, word), score));
 				}
 			}
 
-			return domainDomain1.iterator();
+			return domainWordFirstScore.iterator();
 		});
 
-		domainSinkDomain = domainSinkDomain.reduceByKey((a, b) -> a + b);
+		domainWordScore = domainWordScore.reduceByKey((a, b) -> a + b);
 
-		JavaPairRDD<ImmutableBytesWritable, Put> hBasePuts = domainSinkDomain.mapToPair(domainSinkDomainNum -> {
+		JavaPairRDD<ImmutableBytesWritable, Put> hBasePuts = domainWordScore.mapToPair(domainSinkDomainNum -> {
 			String domain = domainSinkDomainNum._1._1;
-			String sinkDomain = domainSinkDomainNum._1._2;
-			int edgeNumber = domainSinkDomainNum._2;
+			String word = domainSinkDomainNum._1._2;
+			double score = domainSinkDomainNum._2;
 
 			Put put = new Put(DigestUtils.md5Hex(domain).getBytes());
 			put.addColumn(Bytes.toBytes(""), Bytes.toBytes("domain"), Bytes.toBytes(domain));       //todo
-			put.addColumn(Bytes.toBytes(""), Bytes.toBytes(sinkDomain), Bytes.toBytes(edgeNumber));     //todo
+			put.addColumn(Bytes.toBytes(""), Bytes.toBytes(word), Bytes.toBytes(score));     //todo
 
 			return new Tuple2<>(new ImmutableBytesWritable(), put);
 		});
@@ -91,13 +91,9 @@ public class DomainExtractor {
 			job.setOutputFormatClass(TableOutputFormat.class);
 			job.getConfiguration().set(TableOutputFormat.OUTPUT_TABLE, ""); //todo
 		} catch (IOException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 		}
 
 		hBasePuts.saveAsNewAPIHadoopDataset(job.getConfiguration());
 	}
 }
-
-
-
-
