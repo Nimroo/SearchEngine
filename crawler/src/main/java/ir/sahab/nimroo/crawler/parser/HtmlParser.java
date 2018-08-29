@@ -1,6 +1,6 @@
 package ir.sahab.nimroo.crawler.parser;
 
-import ir.sahab.nimroo.crawler.util.LinkNormalizer;
+import ir.sahab.nimroo.util.LinkNormalizer;
 import ir.sahab.nimroo.model.Meta;
 import ir.sahab.nimroo.model.PageData;
 import ir.sahab.nimroo.model.Link;

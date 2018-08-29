@@ -1,4 +1,4 @@
-package ir.sahab.nimroo.crawler.util;
+package ir.sahab.nimroo.util;
 
 import org.junit.Test;
 
@@ -22,5 +22,13 @@ public class LinkNormalizerTest {
 		assertEquals(LinkNormalizer.getSimpleUrl("HTTP://WWW.GOOGLE.COM"), "google.com");
 		assertEquals(LinkNormalizer.getSimpleUrl("Http://www.Google.com/QWERTY/aBc.html//"),
 				"google.com/qwerty/abc.html");
+	}
+
+	@Test
+	public void getDomainTest() {
+		assertEquals(LinkNormalizer.getDomain("http://google.com/abcd"), "http://google.com");
+		assertEquals(LinkNormalizer.getDomain("https://google.com/abcd"), "https://google.com");
+		assertEquals(LinkNormalizer.getDomain("http://google.com/abcd/adsf/sdrh/../wqer.html"), "http://google.com");
+		assertEquals(LinkNormalizer.getDomain("https://login.yahoo.com/abcd"), "https://login.yahoo.com");
 	}
 }
