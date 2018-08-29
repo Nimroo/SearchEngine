@@ -22,7 +22,7 @@ public class StoreManager {
   }
 
   public void start() throws InterruptedException, IOException {
-    elasticClient.disableSource();
+    elasticClient.createIndex();
     while (true) {
       ArrayList<PageData> pageDatas = new ArrayList<>();
       ArrayList<byte[]> kafkaPoll = kafkaHtmlConsumer.get();
@@ -30,7 +30,7 @@ public class StoreManager {
         pageDatas.add(PageDataSerializer.getInstance().deserialize(temp));
       }
       for (PageData pageData : pageDatas) {
-        //elasticClient.addToBulkOfElastic(pageData,Config.elasticsearchIndexName);
+        //elasticClient.addDocumentToBulkOfElastic(pageData,Config.elasticsearchIndexName);
       }
       try {
         elasticClient.addBulkToElastic();
