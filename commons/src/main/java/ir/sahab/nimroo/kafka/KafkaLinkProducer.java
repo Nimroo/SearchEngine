@@ -24,7 +24,7 @@ public class KafkaLinkProducer {
                     + ":"
                     + Config.kafka2Port
                     + ","
-                    + Config.server2Address
+                    + Config.server3Address
                     + ":"
                     + Config.kafka3Port);
     props.put("acks", Config.kafkaProducerAcks);
@@ -34,10 +34,11 @@ public class KafkaLinkProducer {
     props.put("buffer.memory", 33554432);
     props.put("key.serializer", StringSerializer.class);
     props.put("value.serializer", StringSerializer.class);
-    producer = new KafkaProducer<String, String>(props);
+    producer = new KafkaProducer<>(props);
   }
 
   public void send(String topic, String key, String value) {
-    producer.send(new ProducerRecord<String, String>(topic, key, value));
+    System.err.println(topic + " - "+ value);
+    producer.send(new ProducerRecord<>(topic, key, value));
   }
 }

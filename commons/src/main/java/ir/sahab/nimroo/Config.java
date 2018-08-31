@@ -10,6 +10,7 @@ public class Config {
 
   public static String server1Address;
   public static String server2Address;
+  public static String server3Address;
   public static int kafka1Port;
   public static int kafka2Port;
   public static int kafka3Port;
@@ -40,6 +41,8 @@ public class Config {
       properties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream(appConfigPath));
       Config.server1Address = properties.getProperty("server1.ip");
       Config.server2Address = properties.getProperty("server2.ip");
+      Config.server3Address = properties.getProperty("server3.ip");
+
       Config.kafka1Port = Integer.parseInt(properties.getProperty("kafka1.port"));
       Config.kafka2Port = Integer.parseInt(properties.getProperty("kafka2.port"));
       Config.kafka3Port = Integer.parseInt(properties.getProperty("kafka3.port"));
