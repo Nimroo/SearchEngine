@@ -58,7 +58,7 @@ public class LinkShuffler implements Runnable {
       for (int i = 0; i < 1000; i++) {
         logger.info("number of produced links:" + i * 100);
         for (int j = i; j < Config.shuffleSize; j += 1000) {
-          kafkaLinkProducer.send(Config.kafkaLinkTopicName, tempLinkArray[j], tempLinkArray[j]);
+          kafkaLinkProducer.send(Config.kafkaLinkTopicName, null, tempLinkArray[j]);
         }
       }
     }
