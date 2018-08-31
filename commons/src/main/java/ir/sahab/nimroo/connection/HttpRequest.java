@@ -19,14 +19,18 @@ public class HttpRequest {
             config().setFollowRedirect(true).setMaxConnections(Config.httpRequestMaxConnection)
             .setMaxConnectionsPerHost(Config.httpRequestMaxConnectionPerHost)
             .setConnectTimeout(Config.httpSocketTimeout)
-            .setRequestTimeout(Config.httpRequestTimeout);
+            .setRequestTimeout(Config.httpRequestTimeout)
+            .setPooledConnectionIdleTimeout(0)
+            .setConnectionTtl(100);
 
     private BoundRequestBuilder boundRequestBuilder;
     private static ArrayList<AsyncHttpClient> clients;
 
     public static void init() {
         HttpRequest.clients = new ArrayList<>();
-        for (int i = 0; i < 6; i++) {
+        config.setIoThreadsCount(200);
+        config.setCookieStore(null);
+        for (int i = 0; i < 1; i++) {
             clients.add(asyncHttpClient(config));
         }
     }
@@ -42,7 +46,7 @@ public class HttpRequest {
     public void setMethod(HTTP_REQUEST httpMethod) {
         c++;
         AsyncHttpClient client = null;
-        client = clients.get((int) (c%6));
+        client = clients.get((int) (c%1));
 
         switch (httpMethod) {
             case GET:
@@ -74,9 +78,14 @@ public class HttpRequest {
             @Override
             public State onHeadersReceived(HttpHeaders headers) throws Exception {
                 State state = super.onHeadersReceived(headers);
-                if (headers.contains("Content-Type") && headers.get("Content-Type").contains("text/html")) {
+                if (headers.contains("Content-Type") && headers.get("Content-Type").contains("text/")) {
                     return state;
                 }
+
+                if (headers.contains("content-type") && headers.get("content-type").contains("text/")) {
+                    return state;
+                }
+
                 return State.ABORT;
             }
 
