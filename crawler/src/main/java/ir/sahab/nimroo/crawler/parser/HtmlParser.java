@@ -219,7 +219,6 @@ public class HtmlParser {
     return true;
   }
 
-
   private void setH1H2(Document document) {
     Element h1Element = document.select("h1").first();
     if (h1Element != null) {
