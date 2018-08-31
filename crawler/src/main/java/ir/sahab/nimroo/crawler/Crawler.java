@@ -1,18 +1,25 @@
 package ir.sahab.nimroo.crawler;
 
+import com.codahale.metrics.*;
+import com.codahale.metrics.Timer;
+import com.codahale.metrics.graphite.Graphite;
+import com.codahale.metrics.graphite.GraphiteReporter;
 import ir.sahab.nimroo.Config;
 import ir.sahab.nimroo.connection.HttpRequest;
 import ir.sahab.nimroo.crawler.cache.DummyDomainCache;
 import ir.sahab.nimroo.crawler.cache.DummyUrlCache;
 import ir.sahab.nimroo.crawler.parser.HtmlParser;
 import ir.sahab.nimroo.crawler.util.Language;
+import ir.sahab.nimroo.hbase.CrawlerRepository;
 import ir.sahab.nimroo.kafka.KafkaHtmlProducer;
 import ir.sahab.nimroo.kafka.KafkaLinkConsumer;
 import ir.sahab.nimroo.model.PageData;
 import ir.sahab.nimroo.serialization.PageDataSerializer;
+import ir.sahab.nimroo.util.LinkNormalizer;
 import javafx.util.Pair;
 import org.apache.log4j.Logger;
 
+import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -20,90 +27,132 @@ import java.util.concurrent.atomic.AtomicLong;
 public class Crawler {
 
 
-    public Crawler() {
-        executorService = new ThreadPoolExecutor(200, 200, 0L,
-                TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(500));
-    }
 
+    private final MetricRegistry crawlerMetrics = new MetricRegistry();
+    private final Meter dlMeter, parseMeter, crawlMeter, lruPassMeter, lruCheckMeter, enterCrawlMeter,
+            langEnMeter, dlFailMeter, hbaseCheckMeter, urlCacheHitMeter, notHtml;
+    private final Timer crawlTime, fetchTime, hbaseTime, domainCacheTime, urlCacheTime;
+    private final Counter lruRejectCounter;
+    private final Histogram refCount = crawlerMetrics.histogram(MetricRegistry.name(Crawler.class, "refCount"));
     private HtmlParser htmlParser;
     private KafkaLinkConsumer kafkaLinkConsumer;
     private KafkaHtmlProducer kafkaHtmlProducer = new KafkaHtmlProducer();
     private final DummyDomainCache dummyDomainCache = new DummyDomainCache(30000);
     private LinkShuffler linkShuffler = new LinkShuffler();
-    private final UrlChecker urlChecker = new UrlChecker(new DummyUrlCache(), linkShuffler);
+    private final BlockingQueue<String> links = new ArrayBlockingQueue<>(2000);
 
     private Logger logger = Logger.getLogger(Crawler.class);
-    private Long rejectByLRU = 0L;
-    private AtomicLong count = new AtomicLong(0L),
-            dlCount = new AtomicLong(0L), parseCount = new AtomicLong(0L);
     private ExecutorService executorService;
-    private int allLinksCount = 1;
-    private double passedDomainCheckCount;
+    private ScheduledExecutorService scraperService;
+    private final DummyUrlCache dummyUrlCache = new DummyUrlCache();
+    private AtomicLong count, prevCount = new AtomicLong(0);
+
+    public Crawler() {
+        executorService = new ThreadPoolExecutor(250, 250, 0L,
+                TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(300));
+        scraperService = new ScheduledThreadPoolExecutor(2);
+
+        crawlMeter = crawlerMetrics.meter(MetricRegistry.name(Crawler.class, "page", "crawl"));
+        parseMeter = crawlerMetrics.meter(MetricRegistry.name(Crawler.class, "page", "parse"));
+        dlMeter = crawlerMetrics.meter(MetricRegistry.name(Crawler.class, "page", "fetch", "success"));
+        dlFailMeter = crawlerMetrics.meter(MetricRegistry.name(Crawler.class, "page", "fetch", "fail"));
+        notHtml = crawlerMetrics.meter(MetricRegistry.name(Crawler.class, "page", "fetch", "notHtml"));
+        lruPassMeter = crawlerMetrics.meter(MetricRegistry.name(Crawler.class, "lru", "pass"));
+        lruCheckMeter = crawlerMetrics.meter(MetricRegistry.name(Crawler.class, "lru", "check"));
+        enterCrawlMeter = crawlerMetrics.meter(MetricRegistry.name(Crawler.class, "crawl", "enter"));
+        langEnMeter = crawlerMetrics.meter(MetricRegistry.name(Crawler.class, "language", "en"));
+        hbaseCheckMeter = crawlerMetrics.meter(MetricRegistry.name(Crawler.class, "hbase", "markCheck"));
+        urlCacheHitMeter = crawlerMetrics.meter(MetricRegistry.name(Crawler.class, "cache", "url", "hit"));
+        crawlerMetrics.register(MetricRegistry.name(Crawler.class, "kafka", "queue", "links",
+                "size"), (Gauge<Integer>) links::size);
+
+        lruRejectCounter = crawlerMetrics.counter(MetricRegistry.name(Crawler.class, "page", "lru", "reject"));
+        crawlTime = crawlerMetrics.timer(MetricRegistry.name(Crawler.class, "time", "crawl"));
+        fetchTime = crawlerMetrics.timer(MetricRegistry.name(Crawler.class, "time", "fetch"));
+        hbaseTime = crawlerMetrics.timer(MetricRegistry.name(Crawler.class, "time", "hbaseCheck"));
+        domainCacheTime = crawlerMetrics.timer(MetricRegistry.name(Crawler.class, "time", "domainCache"));
+        urlCacheTime = crawlerMetrics.timer(MetricRegistry.name(Crawler.class, "time", "urlCache"));
+
+
+//        ConsoleReporter reporter = ConsoleReporter.forRegistry(crawlerMetrics)
+//                .convertRatesTo(TimeUnit.SECONDS)
+//                .convertDurationsTo(TimeUnit.MILLISECONDS)
+//                .build();
+//        reporter.start(30, TimeUnit.SECONDS);
+
+        Graphite graphite = new Graphite(new InetSocketAddress(Config.server1Address, 2003));
+        GraphiteReporter graphiteReporter = GraphiteReporter.forRegistry(crawlerMetrics)
+                .prefixedWith("test")
+                .convertRatesTo(TimeUnit.SECONDS)
+                .convertDurationsTo(TimeUnit.MILLISECONDS)
+                .filter(MetricFilter.ALL)
+                .build(graphite);
+        graphiteReporter.start(10, TimeUnit.SECONDS);
+
+    }
+
     public void start() throws InterruptedException {
         HttpRequest.init();
         kafkaLinkConsumer = new KafkaLinkConsumer(Config.kafkaLinkTopicName);
         executorService.submit(linkShuffler);
-        executorService.submit(urlChecker);
 
-        Thread shuffleThread = new Thread(linkShuffler);
-        shuffleThread.start();
-        long time = System.currentTimeMillis(),timeLru, timeProduceBack;
-        while (true) {
-            logger.info("Start to poll");
-            ArrayList<String> links = kafkaLinkConsumer.get();
-            logger.info("End to poll");
-            logger.info("Summery kafkaConsumedBatchSize: " + links.size());
+        scraperService.scheduleAtFixedRate(()-> {
+            logger.info("Start scrapping");
+            // TODO Fix this !!!
+//            synchronized (dummyDomainCache) {
+//                dummyDomainCache.scrap();
+//            }
 
-            for (int i = 0; i < links.size();) {
-                String link = links.get(i);
-                allLinksCount++;
-                timeLru = System.currentTimeMillis();
-                if (!dummyDomainCache.add(link, System.currentTimeMillis())) {
-                    rejectByLRU++;
-                    timeProduceBack = System.currentTimeMillis();
-                    linkShuffler.submitLink(link);
-                    timeProduceBack = System.currentTimeMillis() - timeProduceBack;
-                    logger.info("[Timing] TimeProduceBack: " + timeProduceBack);
-                    i++;
-                    continue;
-                }
-                passedDomainCheckCount++;
-                timeLru = System.currentTimeMillis() - timeLru;
-                logger.info("[Timing] TimeLru: " + timeLru);
-
-                try {
-                    executorService.submit(()-> crawl(link, "KafkaLinkConsumer"));
-                    logger.info("Summery ldCount: " + dlCount + " speedS: " + dlCount.longValue() / ((System.currentTimeMillis() - time) / 1000));
-                    logger.info("Summery parseCount: " + parseCount + " speedS: " + parseCount.longValue() / ((System.currentTimeMillis() - time) / 1000));
-                    logger.info("Summery finalCount: " + count + " speedM: " + 60 *  count.longValue() / ((System.currentTimeMillis() - time) / 1000));
-                    logger.info("Summery finalCount: " + count + " speedS: " + count.longValue() / ((System.currentTimeMillis() - time) / 1000));
-                    logger.info("Summery allLinks: " + allLinksCount + " passedDomain: " + passedDomainCheckCount / allLinksCount * 100);
-                    logger.info("Summery domains: " + dummyDomainCache.size());
-                    logger.info("Summery rejectionsByLRU: " + rejectByLRU);
-                }
-                catch (RejectedExecutionException e) {
-                    Thread.sleep(40);
-                    continue;
-                }
-                catch (Exception e) {
-                    logger.error("Bale Bale: ", e);
-                }
-
-                i++;
+            synchronized (dummyUrlCache) {
+                dummyUrlCache.scrap();
             }
-        }
+            logger.info("Done scrapping");
+        }, 1, 15, TimeUnit.MINUTES);
 
+//        scraperService.scheduleAtFixedRate(()-> {
+//            logger.info("rate in 1 minute: " + (count.get() - prevCount.get() / 60));
+//            prevCount.set(count.get());
+//        }, 1, 1, TimeUnit.MINUTES); // TODO Check this out !!! wasn't working why ?!
+
+
+        while (true) {
+            ArrayList<String> list = kafkaLinkConsumer.get();
+
+            for (int i = 0; i < list.size(); i++) {
+                String link = list.get(i);
+                lruCheckMeter.mark();
+                Timer.Context domainCacheCtx = domainCacheTime.time();
+                if (!dummyDomainCache.add(link, System.currentTimeMillis())) {
+                    lruRejectCounter.inc();
+                    linkShuffler.submitLink(link);
+                    domainCacheCtx.stop();
+                    continue;
+                }
+                domainCacheCtx.stop();
+                lruPassMeter.mark();
+
+                while (true) {
+                    try {
+                        executorService.submit(() -> {
+                            crawl(link);
+                        });
+                        break;
+                    } catch (RejectedExecutionException e) {
+                        Thread.sleep(2000);
+                    }
+                }
+            }
+
+        }
     }
 
-    private void crawl(String link, String info){
-        int uniqueLinkProducingCount;
-        long timeGet, timeLd, timeParse, timeSerialize, timeProducePageData, timeProduceLinks;
+    private void crawl(String link) {
+        enterCrawlMeter.mark();
+        final Timer.Context crawlTimeCtx = crawlTime.time();
         logger.info("Link: " + link);
 
-        timeGet = System.currentTimeMillis();
-        timeGet = System.currentTimeMillis() - timeGet;
-        logger.info("[Timing] TimeGet: " + timeGet);
         String response = null;
+        final Timer.Context timeContext = fetchTime.time();
 
         HttpRequest httpRequest1 = new HttpRequest(link);
         httpRequest1.setMethod(HttpRequest.HTTP_REQUEST.GET);
@@ -112,58 +161,61 @@ public class Crawler {
         headers.add(new Pair<>("user-agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Safari/537.36"));
         httpRequest1.setHeaders(headers);
         httpRequest1.setRequestTimeout(15000);
+
         try {
             response = httpRequest1.send().get().getResponseBody();
         } catch (InterruptedException | ExecutionException e) {
-        //    e.printStackTrace();
+            timeContext.close();
+            crawlTimeCtx.close();
+            dlFailMeter.mark();
+            return;
+//            logger.error(e); // TODO separate logfile.
         }
 
         if (response == null || response.length() == 0) {
-            logger.info("response null");
+            dlFailMeter.mark();
+            crawlTimeCtx.close();
             return;
         }
-        dlCount.addAndGet(1);
+        dlMeter.mark();
+        timeContext.stop();
 
         PageData pageData = null;
-        timeParse = System.currentTimeMillis();
         htmlParser = new HtmlParser();
         pageData = htmlParser.parse(link, response);
-        parseCount.addAndGet(1);
-        timeParse = System.currentTimeMillis() - timeParse;
-        logger.info("[Timing] TimeParse: " + timeParse);
+        parseMeter.mark();
 
-        timeLd = System.currentTimeMillis();
-        if (Language.getInstance().detector(pageData.getText().substring(0,java.lang.Math.min(pageData.getText().length(),1000)))) {
-            timeLd = System.currentTimeMillis() - timeLd;
-            logger.info("[Timing] TimeLanguageDetector Text: " + timeLd);
-        }
-        else {
-            timeLd = System.currentTimeMillis() - timeLd;
-            logger.info("[Timing] TimeLanguageDetector NotEnglish: " + timeLd);
+        if (!Language.getInstance().detector(pageData.getText().substring(0, java.lang.Math.min(pageData.getText().length(), 1000)))) {
             return;
         }
+        langEnMeter.mark();
 
-        timeSerialize = System.currentTimeMillis();
         byte[] bytes = PageDataSerializer.getInstance().serialize(pageData);
-        timeSerialize = System.currentTimeMillis() - timeSerialize;
-        logger.info("[Timing] TimeSerialize: " + timeSerialize);
-
-        timeProducePageData = System.currentTimeMillis();
         kafkaHtmlProducer.send(Config.kafkaHtmlTopicName, pageData.getUrl(), bytes); //todo topic
-//        logger.info("PageData:\t" + pageData.toString());
-        timeProducePageData = System.currentTimeMillis() - timeProducePageData;
-        logger.info("[Timing] TimeProducePageData : " + timeProducePageData);
 
-        timeProduceLinks = System.currentTimeMillis();
-        uniqueLinkProducingCount = 0;
-        for (int i = 0; i < pageData.getLinks().size(); i+=10) {
-            urlChecker.submit(pageData.getLinks().get(i).getLink());
+        refCount.update(pageData.getLinks().size());
+        for (int i = 0; i < pageData.getLinks().size(); i+=10) { // Attention only 10% of links are passing !!!
+            String pageLink = pageData.getLinks().get(i).getLink();
+            pageLink = LinkNormalizer.getSimpleUrl(pageLink);
+            Timer.Context urlCacheTimerCtx = urlCacheTime.time();
+            if (!dummyUrlCache.add(pageLink)) {
+                urlCacheHitMeter.mark();
+                urlCacheTimerCtx.stop();
+                continue;
+            }
+            urlCacheTimerCtx.stop();
+
+            hbaseCheckMeter.mark();
+            final Timer.Context hbaseTimeCtx = hbaseTime.time();
+            if (!CrawlerRepository.getInstance().isDuplicateUrl(pageLink)) {
+                logger.info("checked with hBase->  link: " + pageLink);
+                linkShuffler.submitLink(pageLink);
+            }
+            hbaseTimeCtx.stop();
         }
 
-        logger.info("Producing links:\t" + uniqueLinkProducingCount);
-        timeProduceLinks = System.currentTimeMillis() - timeProduceLinks;
-        logger.info("[Timing] TimeProduceLinks: " + timeProduceLinks);
+        crawlMeter.mark();
+        crawlTimeCtx.stop();
         count.addAndGet(1);
     }
-
 }
