@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-option java_package = "ir.sahab.serialization";
+option java_package = "ir.sahab.nimroo.serialization";
 option java_outer_classname = "PageDataProto";
 
 message Meta {
@@ -23,4 +23,6 @@ message PageData {
   required string text = 3;
   repeated Link links = 4;
   repeated Meta metas = 5;
+  optional string h1 = 6;
+  repeated string h2 = 7;
 }

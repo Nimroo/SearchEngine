@@ -44,6 +44,8 @@ public class PageDataSerializer {
       metaBuilder.setScheme(meta.getScheme());
       pageBuilder.addMetas(metaBuilder.build());
     }
+    pageBuilder.setH1(pageData.getH1());
+    pageBuilder.addAllH2(pageData.getH2());
     PageDataProto.PageData protoPageData = pageBuilder.build();
     return protoPageData.toByteArray();
   }
@@ -54,7 +56,8 @@ public class PageDataSerializer {
     pageData.setUrl(protoPageData.getUrl());
     pageData.setTitle(protoPageData.getTitle());
     pageData.setText(protoPageData.getText());
-
+    pageData.setH1(protoPageData.getH1());
+    pageData.setH2(new ArrayList<>(protoPageData.getH2List()));
     ArrayList<Link> links = new ArrayList<>();
     for (PageDataProto.Link protoLink : protoPageData.getLinksList()) {
       Link link = new Link();
