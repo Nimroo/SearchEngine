@@ -173,7 +173,7 @@ public class Crawler {
         }
 
         if (response == null || response.length() == 0) {
-            dlFailMeter.mark();
+            notHtml.mark();
             crawlTimeCtx.close();
             return;
         }
