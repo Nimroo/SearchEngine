@@ -263,4 +263,51 @@ public class HtmlParserTest {
         Assert.assertEquals(h2.get(2), "Does Google Use Heading Tags in SEO?");
         Assert.assertEquals(h2.get(9), "Further Reading");
     }
+
+    @Test
+    public void multipleEdgeTest() {
+        String htmlString = "<html>\n" +
+                "\t<body>\n" +
+                "\t\t<a href = \"http://www.google.com\">qwerty</a>\n" +
+                "\t\t<a href = \"http://www.google.com\">qwerty</a>\n" +
+                "\t\t<a href = \"http://www.google.com\">qwerty</a>\n" +
+                "\t</body>\n" +
+                "</html>";
+
+        PageData pageData = new HtmlParser().parse("", htmlString);
+        ArrayList<Link> links = pageData.getLinks();
+        Assert.assertEquals(links.size(), 1);
+        Assert.assertEquals(links.get(0).getLink(), "http://google.com");
+    }
+
+    @Test
+    public void multipleEdgeTest2() {
+        String htmlString = "<html>\n" +
+                "\t<body>\n" +
+                "\t\t<a href = \"http://www.google.com\">qwerty</a>\n" +
+                "\t\t<a href = \"http://google.com\">qwerty</a>\n" +
+                "\t\t<a href = \"http://www.google.com/\">qwerty</a>\n" +
+                "\t</body>\n" +
+                "</html>";
+
+        PageData pageData = new HtmlParser().parse("", htmlString);
+        ArrayList<Link> links = pageData.getLinks();
+        Assert.assertEquals(links.size(), 1);
+        Assert.assertEquals(links.get(0).getLink(), "http://google.com");
+    }
+
+    @Test
+    public void selfEdgeTest() {
+        String htmlString = "<html>\n" +
+                "\t<body>\n" +
+                "\t\t<a href = \"http://www.google.com\">qwerty</a>\n" +
+                "\t\t<a href = \"http://google.com\">qwerty</a>\n" +
+                "\t\t<a href = \"http://www.google.com/\">qwerty</a>\n" +
+                "\t</body>\n" +
+                "</html>";
+
+        PageData pageData = new HtmlParser().parse("http://google.com", htmlString);
+        ArrayList<Link> links = pageData.getLinks();
+        Assert.assertEquals(links.size(), 0);
+    }
 }
