@@ -1,6 +1,5 @@
 package ir.sahab.nimroo.elasticsearch;
 
-import ir.sahab.nimroo.Config;
 import ir.sahab.nimroo.model.Meta;
 import ir.sahab.nimroo.model.PageData;
 import org.apache.http.HttpHost;
@@ -43,7 +42,7 @@ public class ElasticClient {
   public ElasticClient() {
     client =
         new RestHighLevelClient(
-            RestClient.builder(new HttpHost("94.23.216.137", 9200, "http"))
+            RestClient.builder(new HttpHost("localhost", 9200, "http"))
                 .setRequestConfigCallback(
                     requestConfigBuilder ->
                         requestConfigBuilder.setConnectTimeout(5000).setSocketTimeout(600000))
@@ -52,12 +51,12 @@ public class ElasticClient {
     safeSearch = false;
   }
 
-  public void createIndex() throws IOException {
-    GetIndexRequest getIndexRequest = new GetIndexRequest().indices(Config.elasticsearchIndexName);
+  public void createIndexForWebPages(String index) throws IOException {
+    GetIndexRequest getIndexRequest = new GetIndexRequest().indices(index);
     if (client.indices().exists(getIndexRequest)) {
       return;
     }
-    CreateIndexRequest createIndexRequest = new CreateIndexRequest(Config.elasticsearchIndexName);
+    CreateIndexRequest createIndexRequest = new CreateIndexRequest(index);
     XContentBuilder settings = XContentFactory.jsonBuilder();
     settings.startObject();
     {
@@ -86,6 +85,7 @@ public class ElasticClient {
             mapping.field("type", "text");
             mapping.field("analyzer", "english");
             mapping.field("search_analyzer", "english");
+            mapping.field("term_vector", "yes");
           }
           mapping.endObject();
           mapping.startObject("text");
@@ -93,6 +93,7 @@ public class ElasticClient {
             mapping.field("type", "text");
             mapping.field("analyzer", "english");
             mapping.field("search_analyzer", "english");
+            mapping.field("term_vector", "yes");
           }
           mapping.endObject();
           mapping.startObject("description");
@@ -100,6 +101,7 @@ public class ElasticClient {
             mapping.field("type", "text");
             mapping.field("analyzer", "english");
             mapping.field("search_analyzer", "english");
+            mapping.field("term_vector", "yes");
           }
           mapping.endObject();
           mapping.startObject("keywords");
@@ -107,6 +109,7 @@ public class ElasticClient {
             mapping.field("type", "text");
             mapping.field("analyzer", "english");
             mapping.field("search_analyzer", "english");
+            mapping.field("term_vector", "yes");
           }
           mapping.endObject();
           mapping.startObject("h1");
@@ -114,6 +117,7 @@ public class ElasticClient {
             mapping.field("type", "text");
             mapping.field("analyzer", "english");
             mapping.field("search_analyzer", "english");
+            mapping.field("term_vector", "yes");
           }
           mapping.endObject();
           mapping.startObject("h2");
@@ -121,6 +125,7 @@ public class ElasticClient {
             mapping.field("type", "text");
             mapping.field("analyzer", "english");
             mapping.field("search_analyzer", "english");
+            mapping.field("term_vector", "yes");
           }
           mapping.endObject();
           mapping.startObject("anchors");
@@ -128,6 +133,7 @@ public class ElasticClient {
             mapping.field("type", "text");
             mapping.field("analyzer", "english");
             mapping.field("search_analyzer", "english");
+            mapping.field("term_vector", "yes");
           }
           mapping.endObject();
         }
@@ -140,7 +146,75 @@ public class ElasticClient {
     client.indices().create(createIndexRequest);
   }
 
-  public synchronized void addDocumentToBulkOfElastic(PageData pageData, String id, String index)
+  public void createIndexForNews(String index) throws IOException {
+    GetIndexRequest getIndexRequest = new GetIndexRequest().indices(index);
+    if (client.indices().exists(getIndexRequest)) {
+      return;
+    }
+    CreateIndexRequest createIndexRequest = new CreateIndexRequest(index);
+    XContentBuilder settings = XContentFactory.jsonBuilder();
+    settings.startObject();
+    {
+      settings.startObject("index");
+      {
+        settings.field("number_of_shards", 6);
+        settings.field("number_of_replicas", 1);
+      }
+      settings.endObject();
+    }
+    settings.endObject();
+    XContentBuilder mapping = XContentFactory.jsonBuilder();
+    mapping.startObject();
+    {
+      mapping.startObject("_doc");
+      {
+        mapping.startObject("_source");
+        {
+          mapping.field("enabled", "true");
+        }
+        mapping.endObject();
+        mapping.startObject("properties");
+        {
+          mapping.startObject("title");
+          {
+            mapping.field("type", "text");
+            mapping.field("analyzer", "english");
+            mapping.field("search_analyzer", "english");
+            mapping.field("term_vector", "yes");
+          }
+          mapping.endObject();
+          mapping.startObject("text");
+          {
+            mapping.field("type", "text");
+            mapping.field("analyzer", "english");
+            mapping.field("search_analyzer", "english");
+            mapping.field("term_vector", "yes");
+          }
+          mapping.endObject();
+          mapping.startObject("description");
+          {
+            mapping.field("type", "text");
+            mapping.field("analyzer", "english");
+            mapping.field("search_analyzer", "english");
+            mapping.field("term_vector", "yes");
+          }
+          mapping.endObject();
+          mapping.startObject("pubDate");
+          {
+            mapping.field("type", "date");
+          }
+          mapping.endObject();
+        }
+        mapping.endObject();
+      }
+      mapping.endObject();
+    }
+    mapping.endObject();
+    createIndexRequest.mapping("_doc", mapping).settings(settings);
+    client.indices().create(createIndexRequest);
+  }
+
+  public synchronized void addWebPageToBulkOfElastic(PageData pageData, String id, String index)
       throws IOException {
     String url = pageData.getUrl();
     String title = pageData.getTitle();
@@ -148,8 +222,10 @@ public class ElasticClient {
     String h1 = pageData.getH1();
     String h2 = "";
     ArrayList<String> h2List = pageData.getH2();
-    for (int i = 0; i < h2List.size(); i++) {
-      h2 = h2 + " " + h2List.get(i);
+    if (h2List != null) {
+      for (int i = 0; i < h2List.size(); i++) {
+        h2 = h2 + " " + h2List.get(i);
+      }
     }
     String description = null;
     String keywords = null;
@@ -177,7 +253,28 @@ public class ElasticClient {
     request.add(new IndexRequest(index, "_doc", id).source(builder));
   }
 
-  public synchronized void addDocumentUpdateToBulk(PageData pageData, String id, String index)
+  public synchronized void addNewsToBulkOfElastic(
+      String url,
+      String title,
+      String text,
+      String pubDate,
+      String description,
+      String id,
+      String index)
+      throws IOException {
+    XContentBuilder builder =
+        jsonBuilder()
+            .startObject()
+            .field("url", url)
+            .field("title", title)
+            .field("text", text)
+            .field("description", description)
+            .field("pubDate", pubDate)
+            .endObject();
+    request.add(new IndexRequest(index, "_doc", id).source(builder));
+  }
+
+  public synchronized void addWebPageUpdateToBulk(PageData pageData, String id, String index)
       throws IOException {
     String url = pageData.getUrl();
     String title = pageData.getTitle();
@@ -185,8 +282,10 @@ public class ElasticClient {
     String h1 = pageData.getH1();
     String h2 = "";
     ArrayList<String> h2List = pageData.getH2();
-    for (int i = 0; i < h2List.size(); i++) {
-      h2 = h2 + " " + h2List.get(i);
+    if (h2List != null) {
+      for (int i = 0; i < h2List.size(); i++) {
+        h2 = h2 + " " + h2List.get(i);
+      }
     }
     String description = null;
     String keywords = null;
@@ -276,7 +375,7 @@ public class ElasticClient {
     if (pageRank) {
       searchSourceBuilder.size(1000);
     }
-    searchSourceBuilder.storedField("url");
+    searchSourceBuilder.fetchSource("url", null);
     searchRequest.source(searchSourceBuilder);
     SearchResponse searchResponse = client.search(searchRequest);
     SearchHits hits = searchResponse.getHits();
@@ -344,7 +443,7 @@ public class ElasticClient {
     if (pageRank) {
       searchSourceBuilder.size(1000);
     }
-    searchSourceBuilder.storedField("url");
+    searchSourceBuilder.fetchSource("url", null);
     searchRequest.source(searchSourceBuilder);
     SearchResponse searchResponse = client.search(searchRequest);
     SearchHits hits = searchResponse.getHits();

@@ -22,7 +22,7 @@ public class StoreManager {
   }
 
   public void start() throws InterruptedException, IOException {
-    elasticClient.createIndex();
+    elasticClient.createIndexForWebPages(Config.elasticsearchIndexName);
     while (true) {
       ArrayList<PageData> pageDatas = new ArrayList<>();
       ArrayList<byte[]> kafkaPoll = kafkaHtmlConsumer.get();
