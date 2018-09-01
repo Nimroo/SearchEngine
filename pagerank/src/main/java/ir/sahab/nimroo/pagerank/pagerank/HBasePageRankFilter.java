@@ -1,4 +1,4 @@
-package ir.sahab.nimroo.pagerank;
+package ir.sahab.nimroo.pagerank.pagerank;
 
 import ir.sahab.nimroo.Config;
 import ir.sahab.nimroo.model.Link;

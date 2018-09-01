@@ -29,17 +29,17 @@ public class KeywordExtractor {
 	private static Logger logger = Logger.getLogger(KeywordExtractor.class);
 	private static Configuration hBaseConfiguration = null;
 
-	public void extractKeywords() {
+	public void extractKeywords(String inputTable, String inputFamily, String outputTable, String outputFamily) {
 		Config.load();
-		PropertyConfigurator.configure(DomainExtractor.class.getClassLoader().getResource("log4j.properties"));
+		PropertyConfigurator.configure(KeywordExtractor.class.getClassLoader().getResource("log4j.properties"));
 
 		SparkConf sparkConf = new SparkConf();
 		sparkConf.setAppName("Keyword Extractor");
 		JavaSparkContext javaSparkContext = new JavaSparkContext(sparkConf);
 
 		hBaseConfiguration = HBaseConfiguration.create();
-		hBaseConfiguration.set(TableInputFormat.INPUT_TABLE, ""); //todo
-		hBaseConfiguration.set(TableInputFormat.SCAN_COLUMN_FAMILY, ""); //todo
+		hBaseConfiguration.set(TableInputFormat.INPUT_TABLE, inputTable);
+		hBaseConfiguration.set(TableInputFormat.SCAN_COLUMN_FAMILY, inputFamily);
 		hBaseConfiguration.addResource(Config.hBaseSite);
 		hBaseConfiguration.addResource(Config.hadoopCoreSite);
 
@@ -78,8 +78,8 @@ public class KeywordExtractor {
 			double score = domainSinkDomainNum._2;
 
 			Put put = new Put(DigestUtils.md5Hex(domain).getBytes());
-			put.addColumn(Bytes.toBytes(""), Bytes.toBytes("domain"), Bytes.toBytes(domain));       //todo
-			put.addColumn(Bytes.toBytes(""), Bytes.toBytes(word), Bytes.toBytes(score));     //todo
+			put.addColumn(Bytes.toBytes(outputFamily), Bytes.toBytes("domain"), Bytes.toBytes(domain));
+			put.addColumn(Bytes.toBytes(outputFamily), Bytes.toBytes(word), Bytes.toBytes(score));
 
 			return new Tuple2<>(new ImmutableBytesWritable(), put);
 		});
@@ -89,7 +89,7 @@ public class KeywordExtractor {
 		try {
 			job = Job.getInstance(hBaseConfiguration);
 			job.setOutputFormatClass(TableOutputFormat.class);
-			job.getConfiguration().set(TableOutputFormat.OUTPUT_TABLE, ""); //todo
+			job.getConfiguration().set(TableOutputFormat.OUTPUT_TABLE, outputTable);
 		} catch (IOException e) {
 			//e.printStackTrace();
 		}

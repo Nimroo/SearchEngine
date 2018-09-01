@@ -1,4 +1,4 @@
-package ir.sahab.nimroo.pagerank;
+package ir.sahab.nimroo.pagerank.pagerank;
 
 import ir.sahab.nimroo.Config;
 import org.apache.hadoop.conf.Configuration;
