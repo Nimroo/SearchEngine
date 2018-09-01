@@ -56,6 +56,10 @@ public class HtmlParser {
 
       linkSet.add(link);
     }
+    Link link = new Link();
+    link.setLink(urlString);
+    linkSet.remove(link);
+
     pageData.setLinks(new ArrayList<>(linkSet));
 
     Elements metaElements = document.select("meta");
