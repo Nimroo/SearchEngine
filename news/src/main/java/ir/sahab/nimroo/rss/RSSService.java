@@ -98,6 +98,8 @@ public class RSSService {
           rssDataMap.get(i).put("link", contentOfNode(domTree, i, j));
         } else if (checkTag(domTree, i, j, "pubDate")) {
           rssDataMap.get(i).put("pubDate", contentOfNode(domTree, i, j));
+        } else if (checkTag(domTree, i, j, "description")) {
+          rssDataMap.get(i).put("description", contentOfNode(domTree, i, j));
         }
       }
     }
