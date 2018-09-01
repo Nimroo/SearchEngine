@@ -34,7 +34,7 @@ public class RSSService {
         RSSService.class.getClassLoader().getResource("log4j.properties"));
     logger = Logger.getLogger(RSSService.class);
     executorService =
-        new ThreadPoolExecutor(22, 22, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(50));
+        new ThreadPoolExecutor(20, 20, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(50));
   }
 
   private void updateNews() throws IOException {
@@ -85,13 +85,9 @@ public class RSSService {
     }
     for (HashMap hashMap : rssData) {
       if (last.equals(hashMap.get("link"))) break;
-      System.out.println(rssUrl);
-      System.out.println(hashMap.get("title"));
-      System.out.println(config.get(0) + "  ::  " +  config.get(1));
-      System.out.println("ssssssssss   " + curlNews((String) hashMap.get("link"), config));
-      System.out.println("\n");
+//      TODO
+//      System.out.println(config.get(0) + "  ::  " +  config.get(1));
     }
-    System.out.println("\n\n");
   }
 
   ArrayList<HashMap<String, String>> parsRSS(org.w3c.dom.Document domTree) {
@@ -137,7 +133,7 @@ public class RSSService {
   private String curlNews(String link, ArrayList<String> siteConfig) {
     String body;
     try {
-      Document doc = Jsoup.connect(link).timeout(5000).get();
+      Document doc = Jsoup.connect(link).timeout(15000).get();
       Elements rows = doc.getElementsByAttributeValue(siteConfig.get(0), siteConfig.get(1));
       body = rows.first().text();
     } catch (IOException
