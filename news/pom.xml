@@ -22,6 +22,12 @@
       <artifactId>commons</artifactId>
       <version>1.0-SNAPSHOT</version>
     </dependency>
+    <dependency>
+      <!-- jsoup HTML parser library @ https://jsoup.org/ -->
+      <groupId>org.jsoup</groupId>
+      <artifactId>jsoup</artifactId>
+      <version>1.11.3</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -29,9 +35,6 @@
         <artifactId>maven-assembly-plugin</artifactId>
         <configuration>
           <archive>
-            <manifest>
-              <mainClass>ir.sahab.nimroo.twitter.TwitterLauncher</mainClass>
-            </manifest>
             <manifest>
               <mainClass>ir.sahab.nimroo.rss.Controller</mainClass>
             </manifest>

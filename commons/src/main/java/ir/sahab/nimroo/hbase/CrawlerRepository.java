@@ -123,7 +123,7 @@ public class CrawlerRepository {
               .addColumn(toBytes(markFamily), toBytes("link"));
       if (!table.exists(get)) {
         Put p = new Put(toBytes(DigestUtils.md5Hex(link)));
-        p.addColumn(toBytes(markFamily), toBytes("link"), toBytes(0));
+        p.addColumn(toBytes(markFamily), toBytes("link"), toBytes(link));
         table.put(p);
         return false;
       }

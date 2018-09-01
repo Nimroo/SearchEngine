@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -19,8 +20,10 @@ import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
-import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
 
 public class RSSService {
   private Logger logger;
@@ -31,7 +34,7 @@ public class RSSService {
         RSSService.class.getClassLoader().getResource("log4j.properties"));
     logger = Logger.getLogger(RSSService.class);
     executorService =
-        new ThreadPoolExecutor(22, 22, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(50));
+        new ThreadPoolExecutor(20, 20, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(50));
   }
 
   private void updateNews() throws IOException {
@@ -57,15 +60,17 @@ public class RSSService {
   private void crawlRSS(Result result) {
     String rssUrl =
         Bytes.toString(result.getValue(Bytes.toBytes("newsAgency"), Bytes.toBytes("url")));
-    String config =
+    String configStr =
         Bytes.toString(result.getValue(Bytes.toBytes("newsAgency"), Bytes.toBytes("config")));
     String last =
         Bytes.toString(result.getValue(Bytes.toBytes("newsAgency"), Bytes.toBytes("last")));
-    if(rssUrl == null || config == null)
+
+    if(rssUrl == null || configStr == null)
       return;
     if(last == null)
       last = "";
     ArrayList<HashMap<String, String>> rssData = parsRSS(getRSSDocument(rssUrl));
+    ArrayList<String> config = new ArrayList<>(Arrays.asList(configStr.split("/")));
     if (!rssData.isEmpty()) {
       try {
         NewsRepository.getInstance()
@@ -80,12 +85,12 @@ public class RSSService {
     }
     for (HashMap hashMap : rssData) {
       if (last.equals(hashMap.get("link"))) break;
-      logger.info(hashMap.get("title"));
+//      TODO
+//      System.out.println(config.get(0) + "  ::  " +  config.get(1));
     }
-    // TODO
   }
 
-  ArrayList<HashMap<String, String>> parsRSS(Document domTree) {
+  ArrayList<HashMap<String, String>> parsRSS(org.w3c.dom.Document domTree) {
     ArrayList<HashMap<String, String>> rssDataMap = new ArrayList<>();
     for (int i = 0; i < domTree.getElementsByTagName("item").getLength(); i++) {
       rssDataMap.add(new HashMap<>());
@@ -98,13 +103,15 @@ public class RSSService {
           rssDataMap.get(i).put("link", contentOfNode(domTree, i, j));
         } else if (checkTag(domTree, i, j, "pubDate")) {
           rssDataMap.get(i).put("pubDate", contentOfNode(domTree, i, j));
+        } else if (checkTag(domTree, i, j, "description")) {
+          rssDataMap.get(i).put("description", contentOfNode(domTree, i, j));
         }
       }
     }
     return rssDataMap;
   }
 
-  private boolean checkTag(Document domTree, int domNodeNumber, int itemNodeNumber, String tag) {
+  private boolean checkTag(org.w3c.dom.Document domTree, int domNodeNumber, int itemNodeNumber, String tag) {
     return domTree
         .getElementsByTagName("item")
         .item(domNodeNumber)
@@ -114,7 +121,7 @@ public class RSSService {
         .contains(tag);
   }
 
-  private String contentOfNode(Document domTree, int domNodeNumber, int itemNodeNumber) {
+  private String contentOfNode(org.w3c.dom.Document domTree, int domNodeNumber, int itemNodeNumber) {
     return domTree
         .getElementsByTagName("item")
         .item(domNodeNumber)
@@ -123,9 +130,22 @@ public class RSSService {
         .getTextContent();
   }
 
-  private void crawlNews() {}
+  private String curlNews(String link, ArrayList<String> siteConfig) {
+    String body;
+    try {
+      Document doc = Jsoup.connect(link).timeout(15000).get();
+      Elements rows = doc.getElementsByAttributeValue(siteConfig.get(0), siteConfig.get(1));
+      body = rows.first().text();
+    } catch (IOException
+        | NullPointerException
+        | ExceptionInInitializerError
+        | IndexOutOfBoundsException e) {
+      body = "main body of news not found!";
+    }
+    return body;
+  }
 
-  private Document getRSSDocument(String rssUrl) {
+  private org.w3c.dom.Document getRSSDocument(String rssUrl) {
     DocumentBuilderFactory domBuilderFactory = DocumentBuilderFactory.newInstance();
     DocumentBuilder domBuilder = null;
     URL url = null;
