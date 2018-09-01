@@ -36,9 +36,6 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>ir.sahab.nimroo.twitter.TwitterLauncher</mainClass>
-            </manifest>
-            <manifest>
               <mainClass>ir.sahab.nimroo.rss.Controller</mainClass>
             </manifest>
           </archive>
