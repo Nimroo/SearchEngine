@@ -2,10 +2,11 @@ package ir.sahab.nimroo.kafka;
 
 import ir.sahab.nimroo.Config;
 import org.apache.kafka.clients.producer.KafkaProducer;
-import java.util.Properties;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
+
+import java.util.Properties;
 
 public class KafkaLinkProducer {
 
@@ -13,14 +14,9 @@ public class KafkaLinkProducer {
 
   public KafkaLinkProducer() {
     Properties props = new Properties();
-    // props.put("bootstrap.servers", Config.server1Address + ":" + Config.kafka1Port);
     props.put(
             "bootstrap.servers",
-            Config.server1Address
-                    + ":"
-                    + Config.kafka1Port
-                    + ","
-                    + Config.server2Address
+            Config.server2Address
                     + ":"
                     + Config.kafka2Port
                     + ","

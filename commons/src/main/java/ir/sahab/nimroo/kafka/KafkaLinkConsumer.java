@@ -19,15 +19,11 @@ public class KafkaLinkConsumer {
     // props.put("bootstrap.servers", Config.server1Address + ":" + Config.kafka1Port);
     props.put(
         "bootstrap.servers",
-        Config.server1Address
-            + ":"
-            + Config.kafka1Port
-            + ","
-            + Config.server2Address
+        Config.server2Address
             + ":"
             + Config.kafka2Port
             + ","
-            + Config.server2Address
+            + Config.server3Address
             + ":"
             + Config.kafka3Port);
     props.put("group.id", Config.kafkaConsumerGroupId);
