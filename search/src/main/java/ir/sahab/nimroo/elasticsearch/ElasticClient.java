@@ -258,7 +258,6 @@ public class ElasticClient {
       String title,
       String text,
       String pubDate,
-      String description,
       String id,
       String index)
       throws IOException {
@@ -268,7 +267,6 @@ public class ElasticClient {
             .field("url", url)
             .field("title", title)
             .field("text", text)
-            .field("description", description)
             .field("pubDate", pubDate)
             .endObject();
     request.add(new IndexRequest(index, "_doc", id).source(builder));
@@ -382,7 +380,7 @@ public class ElasticClient {
     SearchHit[] searchHits = hits.getHits();
     HashMap<String, Double> answer = new HashMap<>();
     for (SearchHit hit : searchHits) {
-      answer.put(hit.field("url").getValue().toString(), (double) hit.getScore());
+      answer.put((String) hit.getSourceAsMap().get("url"), (double) hit.getScore());
     }
     return answer;
   }
@@ -450,7 +448,7 @@ public class ElasticClient {
     SearchHit[] searchHits = hits.getHits();
     HashMap<String, Double> answer = new HashMap<>();
     for (SearchHit hit : searchHits) {
-      answer.put(hit.field("url").getValue().toString(), (double) hit.getScore());
+      answer.put((String) hit.getSourceAsMap().get("url"), (double) hit.getScore());
     }
     return answer;
   }
