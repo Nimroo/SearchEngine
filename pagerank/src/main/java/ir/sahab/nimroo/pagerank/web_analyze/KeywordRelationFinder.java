@@ -20,9 +20,11 @@ import java.util.List;
 
 public class KeywordRelationFinder {
 	private static Logger logger = Logger.getLogger(KeywordExtractor.class);
-	private HBaseAPI hBaseAPI = new HBaseAPI();
+	private HBaseAPI hBaseAPI;
 	private String inputTable, inputFamily, inputTable2, inputFamily2, outputTable, outputFamily;
 	private JavaSparkContext javaSparkContext;
+
+	KeywordRelationFinder() {}  //for test only
 
 	public KeywordRelationFinder(String inputTable, String inputFamily, String inputTable2,
 	                             String inputFamily2, String outputTable, String outputFamily) {
@@ -38,12 +40,34 @@ public class KeywordRelationFinder {
 		SparkConf sparkConf = new SparkConf();
 		sparkConf.setAppName("Keyword Extractor");
 		javaSparkContext = new JavaSparkContext(sparkConf);
+
+		hBaseAPI = new HBaseAPI();
 	}
 
 	public void findKeywordRelation() {
-
 		JavaPairRDD<String, List<String>> domainSinkDomain = extractDomainAndList(inputTable, inputFamily);
 		JavaPairRDD<String, List<String>> domainKeyword = extractDomainAndList(inputTable2, inputFamily2);
+
+		JavaPairRDD<Tuple2<String, String>, Integer> domKwSinkKw = extractKeywordPoints(domainSinkDomain, domainKeyword);
+
+		JavaPairRDD<ImmutableBytesWritable, Put> hBasePuts = domKwSinkKw.mapToPair(pairKeywordAndScore -> {
+			String fromKw = pairKeywordAndScore._1._1;
+			String toKw = pairKeywordAndScore._1._2;
+			int number = pairKeywordAndScore._2;
+
+			Put put = new Put(Bytes.toBytes(fromKw));
+			put.addColumn(Bytes.toBytes(outputFamily), Bytes.toBytes(toKw), Bytes.toBytes(number));
+
+			return new Tuple2<>(new ImmutableBytesWritable(), put);
+		});
+
+		Job job = hBaseAPI.getJob(outputTable);
+		hBasePuts.saveAsNewAPIHadoopDataset(job.getConfiguration());
+	}
+
+
+	JavaPairRDD<Tuple2<String, String>, Integer> extractKeywordPoints
+			(JavaPairRDD<String, List<String>> domainSinkDomain, JavaPairRDD<String, List<String>> domainKeyword) {
 
 		JavaPairRDD<String, Tuple2<List<String>, List<String>>> domainSinkDomainKeyword = domainSinkDomain.join(domainKeyword);
 
@@ -84,25 +108,10 @@ public class KeywordRelationFinder {
 					}
 
 					return ans.iterator();
-		});
+				});
 
-		domKwSinkKw = domKwSinkKw.reduceByKey((a, b) -> a + b);
-
-		JavaPairRDD<ImmutableBytesWritable, Put> hBasePuts = domKwSinkKw.mapToPair(pairKeywordAndScore -> {
-			String fromKw = pairKeywordAndScore._1._1;
-			String toKw = pairKeywordAndScore._1._2;
-			int number = pairKeywordAndScore._2;
-
-			Put put = new Put(Bytes.toBytes(fromKw));
-			put.addColumn(Bytes.toBytes(outputFamily), Bytes.toBytes(toKw), Bytes.toBytes(number));
-
-			return new Tuple2<>(new ImmutableBytesWritable(), put);
-		});
-
-		Job job = hBaseAPI.getJob(outputTable);
-		hBasePuts.saveAsNewAPIHadoopDataset(job.getConfiguration());
+		return domKwSinkKw.reduceByKey((a, b) -> a + b);
 	}
-
 
 	private JavaPairRDD<String, List<String>> extractDomainAndList(String inputTable, String inputFamily) {
 		JavaPairRDD<ImmutableBytesWritable, Result> hBaseRDD =
