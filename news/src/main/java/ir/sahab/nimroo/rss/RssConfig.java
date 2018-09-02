@@ -11,6 +11,7 @@ public class RssConfig {
   private RssConfig() {}
 
   public static int numberOfRssSite;
+  public static String newsIndexNameForElastic;
 
   public static void load() {
     String appConfigPath = "rss.properties";
@@ -19,6 +20,7 @@ public class RssConfig {
     try {
       properties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream(appConfigPath));
       RssConfig.numberOfRssSite = Integer.parseInt(properties.getProperty("numberOfRssSite"));
+      RssConfig.newsIndexNameForElastic = properties.getProperty("newsIndexNameForElastic");
       for(int i=0; i<RssConfig.numberOfRssSite; i++){
         String tmpRssUrl = properties.getProperty("Site."+i+".RssUrl");
         String tmpConfig = properties.getProperty("Site."+i+".Config");
