@@ -153,7 +153,7 @@ public class RSSService {
         | NullPointerException
         | ExceptionInInitializerError
         | IndexOutOfBoundsException e) {
-      logger.warn(e);
+      logger.warn("not found body for this link." + link, e);
       body = "not Found!";
     }
     return body;
