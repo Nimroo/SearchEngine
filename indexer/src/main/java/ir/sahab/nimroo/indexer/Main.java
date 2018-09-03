@@ -77,7 +77,7 @@ public class Main {
       }
     }
     persistRate.mark(pageDatas.size());
-    numberOfStoreDocument += pageDatas.size();
+    logger.info(numberOfStoreDocument + " store from kafka to HBase and Elastic.");
   }
 
   private ArrayList<Put> addToHBaseBulk(PageData pageData) {
