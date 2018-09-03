@@ -39,10 +39,15 @@ public class Main {
     logger = Logger.getLogger(Main.class);
     elasticClient = new ElasticClient();
     kafkaHtmlConsumer = new KafkaHtmlConsumer();
+    try {
+      elasticClient.createIndexForWebPages(Config.elasticsearchIndexName);
+    } catch (IOException e) {
+      logger.error(e);
+    }
 
     Graphite graphite = new Graphite(new InetSocketAddress(Config.server1Address, 2003));
     GraphiteReporter graphiteReporter = GraphiteReporter.forRegistry(crawlerMetrics)
-            .prefixedWith("omlet")
+            .prefixedWith("omlet1")
             .convertRatesTo(TimeUnit.SECONDS)
             .convertDurationsTo(TimeUnit.MILLISECONDS)
             .filter(MetricFilter.ALL)
@@ -52,7 +57,7 @@ public class Main {
 
   private void storeFromKafka() {
     ArrayList<byte[]> pageDatas = kafkaHtmlConsumer.get();
-    ArrayList<ArrayList<Put>> putArray = new ArrayList<>();
+    ArrayList<Put> putArray = new ArrayList<>();
     for (byte[] bytes : pageDatas) {
       PageData pageData;
       try {
@@ -62,24 +67,24 @@ public class Main {
         continue;
       }
       addToElasticBulk(pageData);
-      putArray.add(addToHBaseBulk(pageData));
+      putArray.add(createPut(pageData));
     }
     try {
       elasticClient.addBulkToElastic();
     } catch (IOException e) {
       logger.error("error occur in storeFromKafka method.", e);
     }
-    for (ArrayList list : putArray){
-      try {
-        CrawlerRepository.getInstance().putToTable(list);
-      } catch (IOException e) {
-        logger.error("error occur in storeFromKafka method.", e);
-      }
+    try {
+      CrawlerRepository.getInstance().putToTable(putArray);
+    } catch (IOException e) {
+      logger.error("error occur in storeFromKafka method.", e);
     }
     persistRate.mark(pageDatas.size());
+    numberOfStoreDocument += pageDatas.size();
     logger.info(numberOfStoreDocument + " store from kafka to HBase and Elastic.");
   }
 
+  @Deprecated
   private ArrayList<Put> addToHBaseBulk(PageData pageData) {
     ArrayList<Put> arrayList = new ArrayList<>();
     Put p = new Put(toBytes(DigestUtils.md5Hex(pageData.getUrl())));
@@ -91,6 +96,15 @@ public class Main {
       arrayList.add(tmp);
     }
     return arrayList;
+  }
+
+  private Put createPut(PageData pageData) {
+    Put p = new Put(toBytes(DigestUtils.md5Hex(pageData.getUrl())));
+    p.addColumn(toBytes("outLink"), toBytes("url"), toBytes(pageData.getUrl()));
+    for (Link link : pageData.getLinks()) {
+      p.addColumn(toBytes("outLink"), toBytes(link.getLink()), toBytes(link.getAnchor()));
+    }
+    return p;
   }
 
   private void addToElasticBulk(PageData pageData) {
@@ -110,7 +124,13 @@ public class Main {
       System.exit(1);
     }
     if (args[0].equals("store")) {
-      main.storeFromKafka();
+      while (true) {
+        main.storeFromKafka();
+        try {
+          TimeUnit.SECONDS.sleep(30);
+        } catch (InterruptedException ignored) {
+        }
+      }
     }
   }
 }
