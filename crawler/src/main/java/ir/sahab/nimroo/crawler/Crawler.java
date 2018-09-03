@@ -196,7 +196,7 @@ public class Crawler {
         refCount.update(pageData.getLinks().size());
         for (int i = 0; i < pageData.getLinks().size(); i+=10) { // Attention only 10% of links are passing !!!
             String pageLink = pageData.getLinks().get(i).getLink();
-            pageLink = LinkNormalizer.getSimpleUrl(pageLink);
+            pageLink = LinkNormalizer.getNormalizedUrl(pageLink);
             Timer.Context urlCacheTimerCtx = urlCacheTime.time();
             if (!dummyUrlCache.add(pageLink)) {
                 urlCacheHitMeter.mark();
