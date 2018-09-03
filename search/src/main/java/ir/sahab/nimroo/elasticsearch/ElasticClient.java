@@ -1,5 +1,6 @@
 package ir.sahab.nimroo.elasticsearch;
 
+import ir.sahab.nimroo.Config;
 import ir.sahab.nimroo.model.Meta;
 import ir.sahab.nimroo.model.PageData;
 import org.apache.http.HttpHost;
@@ -42,7 +43,7 @@ public class ElasticClient {
   public ElasticClient() {
     client =
         new RestHighLevelClient(
-            RestClient.builder(new HttpHost("localhost", 9200, "http"))
+            RestClient.builder(new HttpHost(Config.server2Address, 9200, "http"))
                 .setRequestConfigCallback(
                     requestConfigBuilder ->
                         requestConfigBuilder.setConnectTimeout(5000).setSocketTimeout(600000))
