@@ -23,6 +23,7 @@ import scala.Tuple2;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class KeywordExtractor {
@@ -72,7 +73,45 @@ public class KeywordExtractor {
 
 		domainWordScore = domainWordScore.reduceByKey((a, b) -> a + b);
 
-		JavaPairRDD<ImmutableBytesWritable, Put> hBasePuts = domainWordScore.mapToPair(domainSinkDomainNum -> {
+		//-----------------------------------reducing number of keywords to 5----------------------------
+		JavaPairRDD<String, List<Tuple2<String, Double>>> a = domainWordScore.mapToPair(pair -> {
+			List<Tuple2<String, Double>> list = new ArrayList<>();
+			list.add(new Tuple2<>(pair._1._2, pair._2));
+			return new Tuple2<>(pair._1._1, list);
+		});
+		a = a.reduceByKey((list1, list2) -> {
+			if (list1.size() > list2.size()) {
+				list1.addAll(list2);
+				return list1;
+			}
+			list2.addAll(list1);
+			return list2;
+		});
+		a = a.mapToPair(pair -> {
+			List<Tuple2<String, Double>> tuple2List = pair._2;
+
+			tuple2List.sort(Comparator.comparing(o -> o._2));
+
+			tuple2List = tuple2List.subList(Math.max(0, tuple2List.size() - 5), tuple2List.size());
+
+			return new Tuple2<>(pair._1, tuple2List);
+		});
+
+		JavaPairRDD<ImmutableBytesWritable, Put> hBasePuts = a.mapToPair(domainSinkDomainScores -> {
+			String domain = domainSinkDomainScores._1;
+			List<Tuple2<String, Double>> keywords = domainSinkDomainScores._2;
+
+			Put put = new Put(DigestUtils.md5Hex(domain).getBytes());
+			put.addColumn(Bytes.toBytes(outputFamily), Bytes.toBytes("domain"), Bytes.toBytes(domain));
+			for (Tuple2<String, Double> keyword:keywords) {
+				put.addColumn(Bytes.toBytes(outputFamily), Bytes.toBytes(keyword._1), Bytes.toBytes(keyword._2));
+			}
+
+			return new Tuple2<>(new ImmutableBytesWritable(), put);
+		});
+
+
+/*		JavaPairRDD<ImmutableBytesWritable, Put> hBasePuts = domainWordScore.mapToPair(domainSinkDomainNum -> {
 			String domain = domainSinkDomainNum._1._1;
 			String word = domainSinkDomainNum._1._2;
 			double score = domainSinkDomainNum._2;
@@ -83,7 +122,7 @@ public class KeywordExtractor {
 
 			return new Tuple2<>(new ImmutableBytesWritable(), put);
 		});
-
+*/
 
 		Job job = null;
 		try {
