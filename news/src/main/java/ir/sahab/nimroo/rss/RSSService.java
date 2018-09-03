@@ -1,5 +1,6 @@
 package ir.sahab.nimroo.rss;
 
+import ir.sahab.nimroo.elasticsearch.ElasticClient;
 import ir.sahab.nimroo.hbase.NewsRepository;
 import java.io.IOException;
 import java.net.URL;
@@ -28,8 +29,10 @@ import org.jsoup.select.Elements;
 public class RSSService {
   private Logger logger;
   private ExecutorService executorService;
+  private ElasticClient elasticClient;
 
   RSSService() {
+    elasticClient = new ElasticClient();
     PropertyConfigurator.configure(
         RSSService.class.getClassLoader().getResource("log4j.properties"));
     logger = Logger.getLogger(RSSService.class);
@@ -83,10 +86,22 @@ public class RSSService {
         logger.warn(e);
       }
     }
-    for (HashMap hashMap : rssData) {
+    for (HashMap<String, String> hashMap : rssData) {
       if (last.equals(hashMap.get("link"))) break;
-//      TODO
-//      System.out.println(config.get(0) + "  ::  " +  config.get(1));
+      String link = hashMap.get("link");
+      String title = hashMap.get("title");
+      String text = crawlNews(hashMap.get("link"), config);
+      String pubDate = hashMap.get("pubDate");
+      try {
+        elasticClient.addNewsToBulkOfElastic(link, title, text, pubDate, DigestUtils.md5Hex(link), RssConfig.newsIndexNameForElastic);
+      } catch (IOException e) {
+        logger.error("can not add news to elastic", e);
+      }
+    }
+    try {
+      elasticClient.addBulkToElastic();
+    } catch (IOException e) {
+      logger.error("add Bulk to Elastic throw IO Exception." ,e);
     }
   }
 
@@ -103,8 +118,6 @@ public class RSSService {
           rssDataMap.get(i).put("link", contentOfNode(domTree, i, j));
         } else if (checkTag(domTree, i, j, "pubDate")) {
           rssDataMap.get(i).put("pubDate", contentOfNode(domTree, i, j));
-        } else if (checkTag(domTree, i, j, "description")) {
-          rssDataMap.get(i).put("description", contentOfNode(domTree, i, j));
         }
       }
     }
@@ -130,7 +143,7 @@ public class RSSService {
         .getTextContent();
   }
 
-  private String curlNews(String link, ArrayList<String> siteConfig) {
+  private String crawlNews(String link, ArrayList<String> siteConfig) {
     String body;
     try {
       Document doc = Jsoup.connect(link).timeout(15000).get();
@@ -140,7 +153,8 @@ public class RSSService {
         | NullPointerException
         | ExceptionInInitializerError
         | IndexOutOfBoundsException e) {
-      body = "main body of news not found!";
+      logger.warn("not found body for this link." + link, e);
+      body = "not Found!";
     }
     return body;
   }
@@ -167,6 +181,7 @@ public class RSSService {
     executorService.submit(
         () -> {
           try {
+            elasticClient.createIndexForNews(RssConfig.newsIndexNameForElastic);
             updateNews();
           } catch (IOException e) {
             logger.error(e);

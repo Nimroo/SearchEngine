@@ -16,7 +16,8 @@
     <module>search</module>
     <module>pagerank</module>
     <module>mapreduce</module>
-    <module>other</module> 
+    <module>other</module>
+    <module>indexer</module>
   </modules>
 
   <name>nimroo</name>

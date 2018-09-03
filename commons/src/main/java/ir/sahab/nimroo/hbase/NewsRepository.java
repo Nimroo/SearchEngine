@@ -119,13 +119,8 @@ public class NewsRepository {
     return table.get(get);
   }
 
-  public void putToTable(String family, byte[] key, ArrayList< Pair<byte[] ,byte[]> > columns)
-      throws IOException {
-    Put put = new Put(key);
-    for (Pair pair : columns){
-      put.addColumn(Bytes.toBytes(family), (byte[]) pair.getFirst(), (byte[]) pair.getSecond());
-    }
-    table.put(put);
+  public void putToTable(ArrayList<Put> puts) throws IOException {
+    table.put(puts);
   }
 
 }
