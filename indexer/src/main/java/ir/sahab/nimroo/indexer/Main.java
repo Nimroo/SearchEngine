@@ -1,7 +1,10 @@
 package ir.sahab.nimroo.indexer;
 
-import static org.apache.hadoop.hbase.util.Bytes.toBytes;
-
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricFilter;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.graphite.Graphite;
+import com.codahale.metrics.graphite.GraphiteReporter;
 import ir.sahab.nimroo.Config;
 import ir.sahab.nimroo.elasticsearch.ElasticClient;
 import ir.sahab.nimroo.hbase.CrawlerRepository;
@@ -9,17 +12,17 @@ import ir.sahab.nimroo.kafka.KafkaHtmlConsumer;
 import ir.sahab.nimroo.model.Link;
 import ir.sahab.nimroo.model.PageData;
 import ir.sahab.nimroo.serialization.PageDataSerializer;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
+
+import static org.apache.hadoop.hbase.util.Bytes.toBytes;
 
 public class Main {
 
@@ -28,12 +31,23 @@ public class Main {
   ElasticClient elasticClient;
   KafkaHtmlConsumer kafkaHtmlConsumer;
   int numberOfStoreDocument = 0;
+  private final MetricRegistry crawlerMetrics = new MetricRegistry();
+  private final Meter persistRate = crawlerMetrics.meter(MetricRegistry.name("persist", "rate"));
 
   private Main() {
     PropertyConfigurator.configure(Main.class.getClassLoader().getResource("log4j.properties"));
     logger = Logger.getLogger(Main.class);
     elasticClient = new ElasticClient();
     kafkaHtmlConsumer = new KafkaHtmlConsumer();
+
+    Graphite graphite = new Graphite(new InetSocketAddress(Config.server1Address, 2003));
+    GraphiteReporter graphiteReporter = GraphiteReporter.forRegistry(crawlerMetrics)
+            .prefixedWith("omlet")
+            .convertRatesTo(TimeUnit.SECONDS)
+            .convertDurationsTo(TimeUnit.MILLISECONDS)
+            .filter(MetricFilter.ALL)
+            .build(graphite);
+    graphiteReporter.start(10, TimeUnit.SECONDS);
   }
 
   private void storeFromKafka() {
@@ -62,6 +76,7 @@ public class Main {
         logger.error("error occur in storeFromKafka method.", e);
       }
     }
+    persistRate.mark(pageDatas.size());
     numberOfStoreDocument += pageDatas.size();
   }
 
