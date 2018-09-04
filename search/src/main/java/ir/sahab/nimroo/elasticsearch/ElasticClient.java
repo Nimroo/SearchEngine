@@ -192,14 +192,6 @@ public class ElasticClient {
             mapping.field("term_vector", "yes");
           }
           mapping.endObject();
-          mapping.startObject("description");
-          {
-            mapping.field("type", "text");
-            mapping.field("analyzer", "english");
-            mapping.field("search_analyzer", "english");
-            mapping.field("term_vector", "yes");
-          }
-          mapping.endObject();
           mapping.startObject("pubDate");
           {
             mapping.field("type", "date");

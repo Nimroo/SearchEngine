@@ -1,6 +1,8 @@
 package ir.sahab.nimroo;
 
+import ir.sahab.nimroo.elasticsearch.ElasticAnalysisClient;
 import ir.sahab.nimroo.elasticsearch.ElasticClient;
+import ir.sahab.nimroo.model.PageData;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
@@ -16,6 +18,28 @@ public class ElasticsearchUI {
 
   public static void main(String[] args) {
     Config.load();
+    ElasticsearchUI elasticsearchUI = new ElasticsearchUI();
+    try {
+      elasticsearchUI.test();
+    } catch (URISyntaxException | IOException e) {
+      LOGGER.error(e);
+    }
+  }
+
+  public void test() throws URISyntaxException, IOException {
+    elasticClient = new ElasticClient();
+    elasticClient.readObsceneWordsForSearch();
+    scanner = new Scanner(System.in);
+    elasticClient.createIndexForNews("lasttest22");
+    elasticClient.addBulkToElastic();
+    ElasticAnalysisClient elasticAnalysisClient = new ElasticAnalysisClient();
+    elasticAnalysisClient.getInterestingKeywords("webpage","f66a3effb565a76c8f9a47e9c0229fe3",5);
+    search();
+    System.out.println("here");
+  }
+ /*
+  public static void main(String[] args) {
+    Config.load();
 
     ElasticsearchUI elasticsearchUI = new ElasticsearchUI();
     try {
@@ -24,7 +48,7 @@ public class ElasticsearchUI {
       LOGGER.error(e);
     }
   }
-
+*/
   public void start() throws URISyntaxException {
     elasticClient = new ElasticClient();
     elasticClient.readObsceneWordsForSearch();
@@ -72,11 +96,11 @@ public class ElasticsearchUI {
 
   private void search() throws IOException {
     System.out.println("Enter your search text:\n");
-    scanner.nextLine();
+    //scanner.nextLine();
     String searchText = scanner.nextLine();
     HashMap<String, Double> ans =
         elasticClient.simpleSearchInElasticForWebPage(
-            searchText, Config.elasticsearchIndexName, true);
+            searchText, "lasttest1", false);
     for (HashMap.Entry<String, Double> temp : ans.entrySet()) {
       System.out.println(temp.getKey() + "     " + temp.getValue());
     }
