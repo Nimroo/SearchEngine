@@ -127,8 +127,9 @@ public class Main {
       while (true) {
         main.storeFromKafka();
         try {
-          TimeUnit.SECONDS.sleep(30);
-        } catch (InterruptedException ignored) {
+          TimeUnit.SECONDS.sleep(10);
+        } catch (InterruptedException e) {
+          logger.warn("thread main in indexer module don't want to sleep!");
         }
       }
     }
