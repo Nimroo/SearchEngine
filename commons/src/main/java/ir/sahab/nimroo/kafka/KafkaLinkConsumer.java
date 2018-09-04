@@ -16,7 +16,6 @@ public class KafkaLinkConsumer {
 
   public KafkaLinkConsumer(String topicName) {
     Properties props = new Properties();
-    // props.put("bootstrap.servers", Config.server1Address + ":" + Config.kafka1Port);
     props.put(
         "bootstrap.servers",
         Config.server2Address
