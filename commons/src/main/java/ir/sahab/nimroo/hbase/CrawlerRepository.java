@@ -165,6 +165,10 @@ public class CrawlerRepository {
     table.put(puts);
   }
 
+  public void putToTable(Put put) throws IOException {
+    table.put(put);
+  }
+
   public double getPageRank(String link){
     try {
       return Bytes.toDouble(getFromTable(pageRankFamily,
