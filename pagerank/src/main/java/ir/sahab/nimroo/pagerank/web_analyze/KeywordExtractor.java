@@ -1,17 +1,13 @@
 package ir.sahab.nimroo.pagerank.web_analyze;
 
-import ir.sahab.nimroo.Config;
+import ir.sahab.nimroo.pagerank.HBaseAPI;
 import ir.sahab.nimroo.util.LinkNormalizer;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.Cell;
 import org.apache.hadoop.hbase.CellUtil;
-import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
-import org.apache.hadoop.hbase.mapreduce.TableInputFormat;
-import org.apache.hadoop.hbase.mapreduce.TableOutputFormat;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.log4j.Logger;
@@ -21,32 +17,35 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import scala.Tuple2;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
 public class KeywordExtractor {
 	private static Logger logger = Logger.getLogger(KeywordExtractor.class);
-	private static Configuration hBaseConfiguration = null;
+	private String inputTable, inputFamily, outputTable, outputFamily;
+	private JavaSparkContext javaSparkContext;
+	private HBaseAPI hBaseAPI;
 
-	public void extractKeywords(String inputTable, String inputFamily, String outputTable, String outputFamily) {
-		Config.load();
+	KeywordExtractor() {} //for test only
+	public KeywordExtractor(String inputTable, String inputFamily, String outputTable, String outputFamily) {
 		PropertyConfigurator.configure(KeywordExtractor.class.getClassLoader().getResource("log4j.properties"));
+
+		this.inputTable = inputTable;
+		this.inputFamily = inputFamily;
+		this.outputTable = outputTable;
+		this.outputFamily = outputFamily;
 
 		SparkConf sparkConf = new SparkConf();
 		sparkConf.setAppName("Keyword Extractor");
-		JavaSparkContext javaSparkContext = new JavaSparkContext(sparkConf);
+		javaSparkContext = new JavaSparkContext(sparkConf);
 
-		hBaseConfiguration = HBaseConfiguration.create();
-		hBaseConfiguration.set(TableInputFormat.INPUT_TABLE, inputTable);
-		hBaseConfiguration.set(TableInputFormat.SCAN_COLUMN_FAMILY, inputFamily);
-		hBaseConfiguration.addResource(Config.hBaseSite);
-		hBaseConfiguration.addResource(Config.hadoopCoreSite);
+		hBaseAPI = new HBaseAPI();
+	}
 
+	public void extractKeywords() {
 		JavaPairRDD<ImmutableBytesWritable, Result> hBaseRDD =
-				javaSparkContext.newAPIHadoopRDD(hBaseConfiguration, TableInputFormat.class,
-						ImmutableBytesWritable.class, Result.class);
+				hBaseAPI.getRDD(javaSparkContext, inputTable, inputFamily);
 
 		JavaPairRDD<Tuple2<String,String>, Double> domainWordScore = hBaseRDD.flatMapToPair(pairRow -> {
 			Result result = pairRow._2;
@@ -71,33 +70,9 @@ public class KeywordExtractor {
 			return domainWordFirstScore.iterator();
 		});
 
-		domainWordScore = domainWordScore.reduceByKey((a, b) -> a + b);
+		JavaPairRDD<String, List<Tuple2<String, Double>>> domainListKeywordRDD = extractDomainListKeywordsRDD(domainWordScore);
 
-		//-----------------------------------reducing number of keywords to 5----------------------------
-		JavaPairRDD<String, List<Tuple2<String, Double>>> a = domainWordScore.mapToPair(pair -> {
-			List<Tuple2<String, Double>> list = new ArrayList<>();
-			list.add(new Tuple2<>(pair._1._2, pair._2));
-			return new Tuple2<>(pair._1._1, list);
-		});
-		a = a.reduceByKey((list1, list2) -> {
-			if (list1.size() > list2.size()) {
-				list1.addAll(list2);
-				return list1;
-			}
-			list2.addAll(list1);
-			return list2;
-		});
-		a = a.mapToPair(pair -> {
-			List<Tuple2<String, Double>> tuple2List = pair._2;
-
-			tuple2List.sort(Comparator.comparing(o -> o._2));
-
-			tuple2List = tuple2List.subList(Math.max(0, tuple2List.size() - 5), tuple2List.size());
-
-			return new Tuple2<>(pair._1, tuple2List);
-		});
-
-		JavaPairRDD<ImmutableBytesWritable, Put> hBasePuts = a.mapToPair(domainSinkDomainScores -> {
+		JavaPairRDD<ImmutableBytesWritable, Put> hBasePuts = domainListKeywordRDD.mapToPair(domainSinkDomainScores -> {
 			String domain = domainSinkDomainScores._1;
 			List<Tuple2<String, Double>> keywords = domainSinkDomainScores._2;
 
@@ -124,15 +99,42 @@ public class KeywordExtractor {
 		});
 */
 
-		Job job = null;
-		try {
-			job = Job.getInstance(hBaseConfiguration);
-			job.setOutputFormatClass(TableOutputFormat.class);
-			job.getConfiguration().set(TableOutputFormat.OUTPUT_TABLE, outputTable);
-		} catch (IOException e) {
-			//e.printStackTrace();
-		}
-
+		Job job = hBaseAPI.getJob(outputTable);
 		hBasePuts.saveAsNewAPIHadoopDataset(job.getConfiguration());
+	}
+
+
+	JavaPairRDD<String, List<Tuple2<String, Double>>> extractDomainListKeywordsRDD
+			(JavaPairRDD<Tuple2<String,String>, Double> domainWordScore) {
+		domainWordScore = domainWordScore.reduceByKey((a, b) -> a + b);
+
+		//-----------------------------------reducing number of keywords to 5---------------------------- can be done with merge sort
+		JavaPairRDD<String, List<Tuple2<String, Double>>> a = domainWordScore.mapToPair(pair -> {
+			List<Tuple2<String, Double>> list = new ArrayList<>();
+			list.add(new Tuple2<>(pair._1._2, pair._2));
+			return new Tuple2<>(pair._1._1, list);
+		});
+		a = a.reduceByKey((list1, list2) -> {
+			if (list1.size() > list2.size()) {
+				list1.addAll(list2);
+				return list1;
+			}
+			list2.addAll(list1);
+			return list2;
+		});
+		return a.mapToPair(pair -> {
+			List<Tuple2<String, Double>> tuple2List = pair._2;
+
+			tuple2List.sort(Comparator.comparing(o -> o._2));
+
+			int fromIndex = Math.max(0, tuple2List.size() - 5);
+			List<Tuple2<String, Double>> ans = new ArrayList<>();
+
+			for (int i = fromIndex; i < tuple2List.size(); i++) {
+				ans.add(tuple2List.get(i));
+			}
+
+			return new Tuple2<>(pair._1, ans);
+		});
 	}
 }
