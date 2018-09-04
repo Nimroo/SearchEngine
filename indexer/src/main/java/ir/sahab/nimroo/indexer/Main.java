@@ -46,7 +46,8 @@ public class Main {
     }
 
     Graphite graphite = new Graphite(new InetSocketAddress(Config.server1Address, 2003));
-    GraphiteReporter graphiteReporter = GraphiteReporter.forRegistry(crawlerMetrics)
+    GraphiteReporter graphiteReporter =
+        GraphiteReporter.forRegistry(crawlerMetrics)
             .prefixedWith("omlet1")
             .convertRatesTo(TimeUnit.SECONDS)
             .convertDurationsTo(TimeUnit.MILLISECONDS)
@@ -109,7 +110,8 @@ public class Main {
 
   private void addToElasticBulk(PageData pageData) {
     try {
-      elasticClient.addWebPageToBulkOfElastic(pageData, DigestUtils.md5Hex(pageData.getUrl()), Config.elasticsearchIndexName);
+      elasticClient.addWebPageToBulkOfElastic(
+          pageData, DigestUtils.md5Hex(pageData.getUrl()), Config.elasticsearchIndexName);
     } catch (IOException e) {
       logger.error(e);
     }
@@ -125,12 +127,16 @@ public class Main {
     }
     if (args[0].equals("store")) {
       while (true) {
-        main.storeFromKafka();
+        for (int i = 0; i < 600; i++) {
+          main.storeFromKafka();
+        }
         try {
-          TimeUnit.SECONDS.sleep(10);
+          logger.info("I will go to sleep for one hour.");
+          TimeUnit.HOURS.sleep(1);
         } catch (InterruptedException e) {
           logger.warn("thread main in indexer module don't want to sleep!");
         }
+        main.numberOfStoreDocument = 0;
       }
     }
   }
