@@ -123,7 +123,6 @@ public class ElasticAnalysisClient {
         ArrayList<Pair<String, Double>> tempKeywords = new ArrayList<>();
         for (String key : termsObject.keySet()) {
           double score = (double) termsObject.getJSONObject(key).get("score");
-          score = Math.log(1 + score);
           if (score > maxScore) {
             maxScore = score;
           }
