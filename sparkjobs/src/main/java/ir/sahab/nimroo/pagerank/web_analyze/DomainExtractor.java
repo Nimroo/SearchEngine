@@ -22,17 +22,17 @@ import java.util.List;
 
 public class DomainExtractor {
 	private static Logger logger = Logger.getLogger(DomainExtractor.class);
-	private String inputTable, inputFamily, outputTable, outputFamily;
+	private static String inputTable, inputFamily, outputTable, outputFamily;
 	private JavaSparkContext javaSparkContext;
 	private HBaseAPI hBaseAPI;
 
 	public DomainExtractor(String inputTable, String inputFamily, String outputTable, String outputFamily) {
 		PropertyConfigurator.configure(DomainExtractor.class.getClassLoader().getResource("log4j.properties"));
 
-		this.inputTable = inputTable;
-		this.inputFamily = inputFamily;
-		this.outputTable = outputTable;
-		this.outputFamily = outputFamily;
+		DomainExtractor.inputTable = inputTable;
+		DomainExtractor.inputFamily = inputFamily;
+		DomainExtractor.outputTable = outputTable;
+		DomainExtractor.outputFamily = outputFamily;
 
 		SparkConf sparkConf = new SparkConf();
 		sparkConf.setAppName("Domain Extractor");

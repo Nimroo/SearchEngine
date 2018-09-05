@@ -23,7 +23,7 @@ import java.util.List;
 
 public class KeywordExtractor {
 	private static Logger logger = Logger.getLogger(KeywordExtractor.class);
-	private String inputTable, inputFamily, outputTable, outputFamily;
+	private static String inputTable, inputFamily, outputTable, outputFamily;
 	private JavaSparkContext javaSparkContext;
 	private HBaseAPI hBaseAPI;
 
@@ -31,10 +31,10 @@ public class KeywordExtractor {
 	public KeywordExtractor(String inputTable, String inputFamily, String outputTable, String outputFamily) {
 		PropertyConfigurator.configure(KeywordExtractor.class.getClassLoader().getResource("log4j.properties"));
 
-		this.inputTable = inputTable;
-		this.inputFamily = inputFamily;
-		this.outputTable = outputTable;
-		this.outputFamily = outputFamily;
+		KeywordExtractor.inputTable = inputTable;
+		KeywordExtractor.inputFamily = inputFamily;
+		KeywordExtractor.outputTable = outputTable;
+		KeywordExtractor.outputFamily = outputFamily;
 
 		SparkConf sparkConf = new SparkConf();
 		sparkConf.setAppName("Keyword Extractor");

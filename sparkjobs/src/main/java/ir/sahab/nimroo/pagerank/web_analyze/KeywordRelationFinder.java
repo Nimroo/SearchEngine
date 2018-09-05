@@ -20,8 +20,8 @@ import java.util.List;
 
 public class KeywordRelationFinder {
 	private static Logger logger = Logger.getLogger(KeywordExtractor.class);
+	private static String inputTable, inputFamily, inputTable2, inputFamily2, outputTable, outputFamily;
 	private HBaseAPI hBaseAPI;
-	private String inputTable, inputFamily, inputTable2, inputFamily2, outputTable, outputFamily;
 	private JavaSparkContext javaSparkContext;
 
 	KeywordRelationFinder() {}  //for test only
@@ -30,12 +30,12 @@ public class KeywordRelationFinder {
 	                             String inputFamily2, String outputTable, String outputFamily) {
 		PropertyConfigurator.configure(KeywordRelationFinder.class.getClassLoader().getResource("log4j.properties"));
 
-		this.inputTable = inputTable;
-		this.inputFamily = inputFamily;
-		this.inputTable2 = inputTable2;
-		this.inputFamily2 = inputFamily2;
-		this.outputTable = outputTable;
-		this.outputFamily = outputFamily;
+		KeywordRelationFinder.inputTable = inputTable;
+		KeywordRelationFinder.inputFamily = inputFamily;
+		KeywordRelationFinder.inputTable2 = inputTable2;
+		KeywordRelationFinder.inputFamily2 = inputFamily2;
+		KeywordRelationFinder.outputTable = outputTable;
+		KeywordRelationFinder.outputFamily = outputFamily;
 
 		SparkConf sparkConf = new SparkConf();
 		sparkConf.setAppName("Keyword Extractor");
