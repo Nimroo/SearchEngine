@@ -1,3 +1,0 @@
-dom1 dom2 dom3
-dom2
-dom3
