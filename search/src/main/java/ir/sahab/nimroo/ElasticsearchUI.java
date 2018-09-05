@@ -27,13 +27,25 @@ public class ElasticsearchUI {
   }
 
   public void test() throws URISyntaxException, IOException {
-    elasticClient = new ElasticClient();
-    elasticClient.readObsceneWordsForSearch();
+    //elasticClient = new ElasticClient();
+    //elasticClient.readObsceneWordsForSearch();
     scanner = new Scanner(System.in);
-    elasticClient.createIndexForNews("lasttest22");
-    elasticClient.addBulkToElastic();
+    //elasticClient.createIndexForNews("lasttest22");
+    //elasticClient.addBulkToElastic();
     ElasticAnalysisClient elasticAnalysisClient = new ElasticAnalysisClient();
-    elasticAnalysisClient.getInterestingKeywords("webpage","f66a3effb565a76c8f9a47e9c0229fe3",5);
+    ArrayList<String> temp = new ArrayList<>();
+    temp.add("f66a3effb565a76c8f9a47e9c0229fe3");
+    temp.add("0055b3b0c1a69eb9ecedd7172d9ca0ad");
+    temp.add("005cb0833dd4c0770059f7e707d77ccf");
+    temp.add("0064a936e27c125a6c7551a3479b27d2");
+    temp.add("00672f3c758006985faff360db514e29");
+    temp.add("00672c273b6b14c0f250c02e9e2b3915");
+    temp.add("006734854d82eb50944db21487f58826");
+    temp.add("0066dbf7a4cdcf02d3ff72d24f2d5955");
+    temp.add("0066e0379344b80f22bf0f423cf4cc39");
+    temp.add("0066d40b34a21b1928f0c76487d036d8");
+    temp.add("f8a66e988f38b782c68d422a0d5c8f3e");
+    elasticAnalysisClient.getInterestingKeywordsForMultiDocuments("webpage",temp,5);
     search();
     System.out.println("here");
   }
