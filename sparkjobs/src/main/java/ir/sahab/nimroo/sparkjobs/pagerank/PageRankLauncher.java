@@ -1,4 +1,4 @@
-package ir.sahab.nimroo.pagerank.pagerank;
+package ir.sahab.nimroo.sparkjobs.pagerank;
 
 import ir.sahab.nimroo.Config;
 import ir.sahab.nimroo.model.Link;
@@ -141,7 +141,7 @@ public class PageRankLauncher {
 			String source = sourcePageRankSinks._1;
 			double newPageRank = sourcePageRankSinks._2._1;
 
-			Put put = new Put(DigestUtils.md5Hex(source).getBytes());
+			Put put = new Put(DigestUtils.md5Hex(source).getBytes()); //todo Bytes.toBytes()
 			put.addColumn(Bytes.toBytes("PageRankFamily"), Bytes.toBytes("myPageRank"), Bytes.toBytes(newPageRank));
 
 			return new Tuple2<>(new ImmutableBytesWritable(), put);

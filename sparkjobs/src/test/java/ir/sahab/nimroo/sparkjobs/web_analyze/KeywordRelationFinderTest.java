@@ -1,4 +1,4 @@
-package ir.sahab.nimroo.pagerank.web_analyze;
+package ir.sahab.nimroo.sparkjobs.web_analyze;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -11,8 +11,6 @@ import scala.Tuple2;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import static org.junit.Assert.*;
 
 public class KeywordRelationFinderTest {
 	private static JavaSparkContext javaSparkContext;

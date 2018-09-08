@@ -1,6 +1,6 @@
-package ir.sahab.nimroo.pagerank.web_analyze;
+package ir.sahab.nimroo.sparkjobs.web_analyze;
 
-import ir.sahab.nimroo.pagerank.HBaseAPI;
+import ir.sahab.nimroo.sparkjobs.HBaseAPI;
 import ir.sahab.nimroo.util.LinkNormalizer;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.hadoop.hbase.Cell;
@@ -22,9 +22,11 @@ import java.util.List;
 
 public class DomainExtractor {
 	private static Logger logger = Logger.getLogger(DomainExtractor.class);
-	private static String inputTable, inputFamily, outputTable, outputFamily;
+	private static String inputTable, inputFamily, outputTable, outputFamily; //static for serialization todo
 	private JavaSparkContext javaSparkContext;
 	private HBaseAPI hBaseAPI;
+
+	DomainExtractor() {} //for test only
 
 	public DomainExtractor(String inputTable, String inputFamily, String outputTable, String outputFamily) {
 		PropertyConfigurator.configure(DomainExtractor.class.getClassLoader().getResource("log4j.properties"));
@@ -50,6 +52,7 @@ public class DomainExtractor {
 			List<Cell> cells = result.listCells();
 
 			String domain = null;
+			List<String> sinkDomains = new ArrayList<>();
 			List<Tuple2<Tuple2<String,String>, Integer>> domainDomain1 = new ArrayList<>();
 
 			for (Cell cell:cells) {
@@ -61,8 +64,11 @@ public class DomainExtractor {
 				else {
 					String sinkUrl = Bytes.toString(CellUtil.cloneQualifier(cell));
 					String sinkDomain = LinkNormalizer.getDomain(sinkUrl);
-					domainDomain1.add(new Tuple2<>(new Tuple2<>(domain, sinkDomain), 1));
+					sinkDomains.add(sinkDomain);
 				}
+			}
+			for (String sinkDomain:sinkDomains) {
+				domainDomain1.add(new Tuple2<>(new Tuple2<>(domain, sinkDomain), 1));
 			}
 
 			return domainDomain1.iterator();
@@ -70,14 +76,15 @@ public class DomainExtractor {
 
 		domainSinkDomain = domainSinkDomain.reduceByKey((a, b) -> a + b);
 
+		// can write a mapreduce to complete rows
 		JavaPairRDD<ImmutableBytesWritable, Put> hBasePuts = domainSinkDomain.mapToPair(domainSinkDomainNum -> {
 			String domain = domainSinkDomainNum._1._1;
 			String sinkDomain = domainSinkDomainNum._1._2;
 			int edgeNumber = domainSinkDomainNum._2;
 
-			Put put = new Put(DigestUtils.md5Hex(domain).getBytes());
-			put.addColumn(Bytes.toBytes(outputFamily), Bytes.toBytes("domain"), Bytes.toBytes(domain));
-			put.addColumn(Bytes.toBytes(outputFamily), Bytes.toBytes(sinkDomain), Bytes.toBytes(edgeNumber));
+			Put put = new Put(Bytes.toBytes(DigestUtils.md5Hex(domain)));
+			put.addColumn(Bytes.toBytes(outputFamily), Bytes.toBytes("domain"), Bytes.toBytes(domain));     //todo
+			put.addColumn(Bytes.toBytes(outputFamily), Bytes.toBytes(sinkDomain), Bytes.toBytes(edgeNumber));  //todo
 
 			return new Tuple2<>(new ImmutableBytesWritable(), put);
 		});

@@ -1,4 +1,4 @@
-package ir.sahab.nimroo.pagerank.pagerank;
+package ir.sahab.nimroo.sparkjobs.pagerank;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;

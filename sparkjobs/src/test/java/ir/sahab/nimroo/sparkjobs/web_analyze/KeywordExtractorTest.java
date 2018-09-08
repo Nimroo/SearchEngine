@@ -1,4 +1,4 @@
-package ir.sahab.nimroo.pagerank.web_analyze;
+package ir.sahab.nimroo.sparkjobs.web_analyze;
 
 import ir.sahab.nimroo.util.LinkNormalizer;
 import org.apache.spark.SparkConf;
@@ -10,8 +10,6 @@ import org.junit.Test;
 import scala.Tuple2;
 
 import java.util.List;
-
-import static org.junit.Assert.*;
 
 public class KeywordExtractorTest {
 	private static JavaSparkContext javaSparkContext;

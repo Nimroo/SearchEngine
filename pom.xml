@@ -14,7 +14,7 @@
     <module>crawler</module>
     <module>news</module>
     <module>search</module>
-    <module>pagerank</module>
+    <module>sparkjobs</module>
     <module>mapreduce</module>
     <module>other</module>
     <module>indexer</module>

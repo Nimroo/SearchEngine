@@ -1,6 +1,6 @@
-package ir.sahab.nimroo.pagerank.web_analyze;
+package ir.sahab.nimroo.sparkjobs.web_analyze;
 
-import ir.sahab.nimroo.pagerank.HBaseAPI;
+import ir.sahab.nimroo.sparkjobs.HBaseAPI;
 import ir.sahab.nimroo.util.LinkNormalizer;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.hadoop.hbase.Cell;
@@ -23,7 +23,7 @@ import java.util.List;
 
 public class KeywordExtractor {
 	private static Logger logger = Logger.getLogger(KeywordExtractor.class);
-	private static String inputTable, inputFamily, outputTable, outputFamily;
+	private static String inputTable, inputFamily, outputTable, outputFamily; //static for serialization
 	private JavaSparkContext javaSparkContext;
 	private HBaseAPI hBaseAPI;
 
