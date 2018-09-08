@@ -44,8 +44,6 @@ public class PageRankLauncher {
 
 		SparkConf sparkConf = new SparkConf();
 		sparkConf.setAppName("page rank");
-//		sparkConf.setMaster("spark://94.23.203.156:7077");
-//		sparkConf.setJars(new String[]{"/home/spark/Nimroo/target/"});
 		JavaSparkContext javaSparkContext = new JavaSparkContext(sparkConf);
 
 		Scan scan = new Scan();

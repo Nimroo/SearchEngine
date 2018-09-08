@@ -4,7 +4,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 
 import scala.Tuple2;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 public class PageRank {
@@ -16,7 +16,7 @@ public class PageRank {
 			List<String> sinks = string_doubleListString._2._2;
 			int out = sinks.size();
 
-			List<Tuple2<String, Double>> sinkRankResults = new ArrayList<>();
+			List<Tuple2<String, Double>> sinkRankResults = new LinkedList<>();
 			for (String sink: sinks) {
 				sinkRankResults.add(new Tuple2<>(sink, pr/out));
 			}
