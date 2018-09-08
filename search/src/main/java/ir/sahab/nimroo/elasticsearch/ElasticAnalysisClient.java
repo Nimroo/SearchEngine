@@ -71,7 +71,7 @@ public class ElasticAnalysisClient {
     return ans;
   }
 
-  public ArrayList<Pair<String, ArrayList<Pair<String, Double>>>>
+  public List<Pair<String, List<Pair<String, Double>>>>
       getInterestingKeywordsForMultiDocuments(
           String index, ArrayList<String> ids, int numberOfKeywords) throws IOException {
     Map<String, String> params = Collections.emptyMap();
@@ -113,7 +113,7 @@ public class ElasticAnalysisClient {
     }
     JSONObject responseObject = new JSONObject(responseString.toString());
     JSONArray docsArray = responseObject.getJSONArray("docs");
-    ArrayList<Pair<String, ArrayList<Pair<String, Double>>>> ans = new ArrayList<>();
+    List<Pair<String, List<Pair<String, Double>>>> ans = new ArrayList<>();
     for (Iterator<Object> it = docsArray.iterator(); it.hasNext(); ) {
       JSONObject doc = (JSONObject) it.next();
       if ((boolean) doc.get("found")) {
