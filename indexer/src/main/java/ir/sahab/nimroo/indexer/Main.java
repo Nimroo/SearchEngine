@@ -48,7 +48,7 @@ public class Main {
     Graphite graphite = new Graphite(new InetSocketAddress(Config.server1Address, 2003));
     GraphiteReporter graphiteReporter =
         GraphiteReporter.forRegistry(crawlerMetrics)
-            .prefixedWith("omlet1")
+            .prefixedWith("persistor0")
             .convertRatesTo(TimeUnit.SECONDS)
             .convertDurationsTo(TimeUnit.MILLISECONDS)
             .filter(MetricFilter.ALL)
@@ -127,16 +127,13 @@ public class Main {
     }
     if (args[0].equals("store")) {
       while (true) {
-        for (int i = 0; i < 600; i++) {
           main.storeFromKafka();
-        }
         try {
-          logger.info("I will go to sleep for one hour.");
-          TimeUnit.HOURS.sleep(1);
+          logger.info("I will go to sleep for 10 millisecond.");
+          TimeUnit.MILLISECONDS.sleep(10);
         } catch (InterruptedException e) {
           logger.warn("thread main in indexer module don't want to sleep!");
         }
-        main.numberOfStoreDocument = 0;
       }
     }
   }
