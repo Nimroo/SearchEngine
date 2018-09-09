@@ -43,7 +43,7 @@ public class ElasticClient {
   public ElasticClient() {
     client =
         new RestHighLevelClient(
-            RestClient.builder(new HttpHost(Config.server2Address, 9200, "http"))
+            RestClient.builder(new HttpHost(Config.server1Address, 9200, "http"))
                 .setRequestConfigCallback(
                     requestConfigBuilder ->
                         requestConfigBuilder.setConnectTimeout(5000).setSocketTimeout(600000))
@@ -213,12 +213,12 @@ public class ElasticClient {
     String title = pageData.getTitle();
     String text = pageData.getText();
     String h1 = pageData.getH1();
-    String h2 = "";
+    StringBuilder h2 = new StringBuilder();
     ArrayList<String> h2List = pageData.getH2();
     if (h2List != null) {
-      for (int i = 0; i < h2List.size(); i++) {
-        h2 = h2 + " " + h2List.get(i);
-      }
+        for (String tempH2List : h2List) {
+            h2.append(" ").append(tempH2List);
+        }
     }
     String description = null;
     String keywords = null;
@@ -240,19 +240,14 @@ public class ElasticClient {
             .field("description", description)
             .field("keywords", keywords)
             .field("h1", h1)
-            .field("h2", h2)
+            .field("h2", h2.toString())
             .field("anchors", "")
             .endObject();
     request.add(new IndexRequest(index, "_doc", id).source(builder));
   }
 
   public synchronized void addNewsToBulkOfElastic(
-      String url,
-      String title,
-      String text,
-      String pubDate,
-      String id,
-      String index)
+      String url, String title, String text, String pubDate, String id, String index)
       throws IOException {
     XContentBuilder builder =
         jsonBuilder()
@@ -271,12 +266,12 @@ public class ElasticClient {
     String title = pageData.getTitle();
     String text = pageData.getText();
     String h1 = pageData.getH1();
-    String h2 = "";
+    StringBuilder h2 = new StringBuilder();
     ArrayList<String> h2List = pageData.getH2();
     if (h2List != null) {
-      for (int i = 0; i < h2List.size(); i++) {
-        h2 = h2 + " " + h2List.get(i);
-      }
+        for (String tempH2List : h2List) {
+            h2.append(" ").append(tempH2List);
+        }
     }
     String description = null;
     String keywords = null;
@@ -298,7 +293,7 @@ public class ElasticClient {
             .field("description", description)
             .field("keywords", keywords)
             .field("h1", h1)
-            .field("h2", h2)
+            .field("h2", h2.toString())
             .endObject();
     request.add(new UpdateRequest(index, "_doc", id).doc(builder));
   }
@@ -338,8 +333,30 @@ public class ElasticClient {
     safeSearch = safety;
   }
 
-  public HashMap<String, Double> simpleSearchInElasticForWebPage(
-      String searchText, String index, boolean pageRank) throws IOException {
+  public HashMap<String, Double> searchInElasticForNews(String searchText, String index)
+      throws IOException {
+      SearchRequest searchRequest = new SearchRequest(index);
+      SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+      MultiMatchQueryBuilder multiMatchQueryBuilder =
+              QueryBuilders.multiMatchQuery(
+                      searchText, "text", "title");
+      multiMatchQueryBuilder.field("text", 2);
+      multiMatchQueryBuilder.field("title", 1);
+      searchSourceBuilder.query(multiMatchQueryBuilder);
+      searchSourceBuilder.fetchSource("url", null);
+      searchRequest.source(searchSourceBuilder);
+      SearchResponse searchResponse = client.search(searchRequest);
+      SearchHits hits = searchResponse.getHits();
+      SearchHit[] searchHits = hits.getHits();
+      HashMap<String, Double> answer = new HashMap<>();
+      for (SearchHit hit : searchHits) {
+          answer.put((String) hit.getSourceAsMap().get("url"), (double) hit.getScore());
+      }
+      return answer;
+  }
+
+  HashMap<String, Double> simpleSearchInElasticForWebPage(
+          String searchText, String index, boolean pageRank) throws IOException {
     SearchRequest searchRequest = new SearchRequest(index);
     SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
     BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
