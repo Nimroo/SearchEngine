@@ -30,7 +30,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>ir.sahab.nimroo.mapreduce.RepetitiveAnchors</mainClass>
+                            <mainClass>ir.sahab.nimroo.mapreduce.Top5Anchors</mainClass>
                         </manifest>
                         <manifest>
                             <mainClass>ir.sahab.nimroo.mapreduce.References</mainClass>
