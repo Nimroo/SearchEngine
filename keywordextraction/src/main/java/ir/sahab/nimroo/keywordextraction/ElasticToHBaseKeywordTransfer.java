@@ -68,7 +68,7 @@ public class ElasticToHBaseKeywordTransfer {
 			for (Result result = resultScanner.next(); result != null; result = resultScanner.next()) {
 				String rowKey = Bytes.toString(result.getRow());
 				rows.add(rowKey);
-				byte[] urlBytes = result.getValue(Bytes.toBytes("outLink"), Bytes.toBytes("url"));
+				byte[] urlBytes = result.getValue(Bytes.toBytes(inputFamilyString), Bytes.toBytes("url"));
 				rowsAndUrls.put(rowKey, Bytes.toString(urlBytes));
 
 				i++;
