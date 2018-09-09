@@ -2,7 +2,6 @@ package ir.sahab.nimroo;
 
 import ir.sahab.nimroo.elasticsearch.ElasticAnalysisClient;
 import ir.sahab.nimroo.elasticsearch.ElasticClient;
-import ir.sahab.nimroo.model.PageData;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;

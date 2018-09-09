@@ -1,4 +1,4 @@
-package ir.sahab.nimroo.elasticsearch;
+package ir.sahab.nimroo.keywordextraction;
 
 import javafx.util.Pair;
 import org.apache.http.HttpEntity;
@@ -73,7 +73,7 @@ public class ElasticAnalysisClient {
 
   public List<Pair<String, List<Pair<String, Double>>>>
       getInterestingKeywordsForMultiDocuments(
-          String index, ArrayList<String> ids, int numberOfKeywords) throws IOException {
+          String index, List<String> ids, int numberOfKeywords) throws IOException {
     Map<String, String> params = Collections.emptyMap();
     StringBuilder idsStringbuilder = new StringBuilder();
     for (int i = 0; i < ids.size(); i++) {

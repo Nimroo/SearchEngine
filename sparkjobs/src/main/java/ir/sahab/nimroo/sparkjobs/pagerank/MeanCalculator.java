@@ -49,22 +49,22 @@ public class MeanCalculator {
 		double pageRankSum = pageRanksRDD.reduce((a, b) -> a + b);
 		long num = pageRanksRDD.count();
 
-		logger.info(pageRankSum);
-		logger.info(num);
-		logger.info(pageRankSum / num);
+		System.out.println(pageRankSum);
+		System.out.println(num);
+		System.out.println(pageRankSum / num);
 
 /*		Job job = null;
-		logger.info("start configuring job");
+		System.out.println("start configuring job");
 		try {
 			job = Job.getInstance(hBaseConfiguration);
 			job.getConfiguration().set(TableOutputFormat.OUTPUT_TABLE, "nimroo");
 			job.setOutputFormatClass(TableOutputFormat.class);
-			logger.info("Job configured");
+			System.out.println("Job configured");
 		} catch (IOException e) {
-			logger.info("Job not configured.\t" + e);
+			System.out.println("Job not configured.\t" + e);
 		}
 
-		logger.info("creating hBasePuts rdd...");
+		System.out.println("creating hBasePuts rdd...");
 		JavaPairRDD<ImmutableBytesWritable, Put> hBasePuts = hBaseRDD.mapToPair(pairRow -> {
 			Result result = pairRow._2;
 
@@ -76,10 +76,10 @@ public class MeanCalculator {
 
 			return new Tuple2<>(new ImmutableBytesWritable(), put);
 		});
-		logger.info("hBasePuts rdd created.");
+		System.out.println("hBasePuts rdd created.");
 
-		logger.info("saving data in HBase...");
+		System.out.println("saving data in HBase...");
 		hBasePuts.saveAsNewAPIHadoopDataset(job.getConfiguration());
-		logger.info("data saved.");*/
+		System.out.println("data saved.");*/
 	}
 }
