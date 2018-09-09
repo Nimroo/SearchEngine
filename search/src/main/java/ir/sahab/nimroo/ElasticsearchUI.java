@@ -1,7 +1,7 @@
 package ir.sahab.nimroo;
 
 import ir.sahab.nimroo.elasticsearch.ElasticClient;
-import ir.sahab.nimroo.keywordextraction.ElasticAnalysisClient;
+//import ir.sahab.nimroo.keywordextraction.ElasticAnalysisClient;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
@@ -25,7 +25,7 @@ public class ElasticsearchUI {
     }
   }
 
-  public void test() throws URISyntaxException, IOException {
+  public void test() throws URISyntaxException, IOException {/*
     //elasticClient = new ElasticClient();
     //elasticClient.readObsceneWordsForSearch();
     scanner = new Scanner(System.in);
@@ -46,7 +46,7 @@ public class ElasticsearchUI {
     temp.add("f8a66e988f38b782c68d422a0d5c8f3e");
     elasticAnalysisClient.getInterestingKeywordsForMultiDocuments("webpage",temp,5);
     search();
-    System.out.println("here");
+    System.out.println("here");*/
   }
  /*
   public static void main(String[] args) {
