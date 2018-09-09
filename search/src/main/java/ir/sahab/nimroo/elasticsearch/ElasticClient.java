@@ -355,7 +355,7 @@ public class ElasticClient {
       return answer;
   }
 
-  HashMap<String, Double> simpleSearchInElasticForWebPage(
+  public HashMap<String, Double> simpleSearchInElasticForWebPage(
           String searchText, String index, boolean pageRank) throws IOException {
     SearchRequest searchRequest = new SearchRequest(index);
     SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
