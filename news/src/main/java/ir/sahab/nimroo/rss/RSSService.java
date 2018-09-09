@@ -5,9 +5,16 @@ import ir.sahab.nimroo.hbase.NewsRepository;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -53,9 +60,16 @@ public class RSSService {
             });
       }
       try {
+        logger.info("I will goto sleep for 10 minute.");
         TimeUnit.MINUTES.sleep(10);
       } catch (InterruptedException e) {
         logger.warn("concurrent problem in RSS Controller!\nthread don't want to sleep!!", e);
+      }
+      try {
+        elasticClient.addBulkToElastic();
+        logger.info("news added to elastic.");
+      } catch (IOException e) {
+        logger.error("add Bulk to Elastic throw IO Exception." ,e);
       }
     }
   }
@@ -91,18 +105,37 @@ public class RSSService {
       String link = hashMap.get("link");
       String title = hashMap.get("title");
       String text = crawlNews(hashMap.get("link"), config);
-      String pubDate = hashMap.get("pubDate");
+      String pubDate = convertToLocalDateTimeViaMilisecond(reFormatPublishDate(hashMap.get("pubDate"))).toString();
+      if(text.equals("not Found!"))
+        continue;
       try {
         elasticClient.addNewsToBulkOfElastic(link, title, text, pubDate, DigestUtils.md5Hex(link), RssConfig.newsIndexNameForElastic);
+        logger.info("correct news add to  bulk of elastic.");
       } catch (IOException e) {
         logger.error("can not add news to elastic", e);
       }
     }
-    try {
-      elasticClient.addBulkToElastic();
-    } catch (IOException e) {
-      logger.error("add Bulk to Elastic throw IO Exception." ,e);
+  }
+
+  private Date reFormatPublishDate(String pubDate) {
+    ArrayList<SimpleDateFormat> formats = new ArrayList<>();
+    formats.add(new SimpleDateFormat("EEE, dd MMM yyyy hh:mm Z"));
+    formats.add(new SimpleDateFormat("dd MMM yyyy hh:mm:ss Z"));
+    formats.add(new SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss Z"));
+    formats.add(new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss Z"));
+    Date date = null;
+    if (pubDate == null) {
+      pubDate = (new Date()).toString();
     }
+    for (SimpleDateFormat formatter : formats) {
+      try {
+        date = formatter.parse(pubDate);
+        break;
+      } catch (ParseException e) {
+        date = new Date();
+      }
+    }
+    return date;
   }
 
   ArrayList<HashMap<String, String>> parsRSS(org.w3c.dom.Document domTree) {
@@ -144,7 +177,7 @@ public class RSSService {
   }
 
   private String crawlNews(String link, ArrayList<String> siteConfig) {
-    String body;
+    String body = "not Found!";
     try {
       Document doc = Jsoup.connect(link).timeout(15000).get();
       Elements rows = doc.getElementsByAttributeValue(siteConfig.get(0), siteConfig.get(1));
@@ -153,7 +186,7 @@ public class RSSService {
         | NullPointerException
         | ExceptionInInitializerError
         | IndexOutOfBoundsException e) {
-      logger.warn("not found body for this link." + link, e);
+      logger.warn("not found body for this link." + link);
       body = "not Found!";
     }
     return body;
@@ -175,6 +208,12 @@ public class RSSService {
       logger.error(e);
     }
     return null;
+  }
+
+  public LocalDateTime convertToLocalDateTimeViaMilisecond(Date dateToConvert) {
+    return Instant.ofEpochMilli(dateToConvert.getTime())
+        .atZone(ZoneId.systemDefault())
+        .toLocalDateTime();
   }
 
   public void runNewsUpdater() {
