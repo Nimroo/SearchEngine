@@ -39,7 +39,7 @@ public class DomainPageRankLauncher {
 	}
 
 	public void launchPageRank(int n) {
-		JavaPairRDD<ImmutableBytesWritable, Result> hBaseRDD = hBaseAPI.getRDD(javaSparkContext, inputTable, inputFamily);
+		JavaPairRDD<ImmutableBytesWritable, Result> hBaseRDD = hBaseAPI.getRDD(javaSparkContext, inputTable, inputFamily, "0", "001");
 
 		JavaPairRDD<String, List<String>> domainSinkDomain = hBaseRDD.mapToPair(pairRow -> {
 			Result result = pairRow._2;
@@ -72,6 +72,8 @@ public class DomainPageRankLauncher {
 			List<String> sinkDomains = pair._2;
 			Set<String> domainsSet = setBroadcast.getValue();
 			List<String> finalSinkDomains = new LinkedList<>();
+
+			System.out.println(domainsSet.size());
 
 			for (String sinkDomain:sinkDomains) {
 				if (domainsSet.contains(sinkDomain)) {

@@ -10,7 +10,7 @@ public class Analyzer {
 		*/
 
 		DomainPageRankLauncher domainPageRankLauncher = new DomainPageRankLauncher(
-				"domain", "domainGraph", "domainPageRank", "pageRank");
+				"domain", "domainGraph", "pageRankDomain", "pageRank");
 		domainPageRankLauncher.launchPageRank(40);
 	}
 }
