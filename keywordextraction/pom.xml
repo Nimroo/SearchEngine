@@ -14,7 +14,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>ir.sahab.nimroo.indexer.Main</mainClass>
+                            <mainClass>ir.sahab.nimroo.keywordextraction.Transporter</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>
