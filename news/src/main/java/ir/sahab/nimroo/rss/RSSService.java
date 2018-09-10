@@ -266,26 +266,24 @@ public class RSSService {
             NewsRepository.getInstance()
                 .getResultScannerWithTimeRange(
                     "trendWords",
-                    System.currentTimeMillis() - (12 * 60 * 60 * 1000),
+                    System.currentTimeMillis() - (18 * 60 * 60 * 1000),
                     System.currentTimeMillis());
       } catch (IOException e) {
         logger.error(e);
       }
-      if(scanner == null){
+      if (scanner == null) {
         logger.error("error in RSSService Class, scanner is null.");
         continue;
       }
       for (Result result = scanner.next(); (result != null); result = scanner.next()) {
-        for(Cell cell : result.listCells()){
+        for (Cell cell : result.listCells()) {
           String word = Bytes.toString(CellUtil.cloneQualifier(cell));
           Double value = Bytes.toDouble(CellUtil.cloneValue(cell));
-          if(!trendWords.containsKey(word))
-            trendWords.put(word, value);
-          else
-            trendWords.replace(word, trendWords.get(word) + value);
+          if (!trendWords.containsKey(word)) trendWords.put(word, value);
+          else trendWords.replace(word, trendWords.get(word) + value);
         }
       }
-      for (int i = 0; i < Math.min(5, trendWords.size()); i++) {
+      for (int i = 0; i < Math.min(10, trendWords.size()); i++) {
         Map.Entry<String, Double> maxEntry = null;
         for (Map.Entry<String, Double> entry : trendWords.entrySet()) {
           if (maxEntry == null || entry.getValue().compareTo(maxEntry.getValue()) > 0.0000) {
@@ -295,8 +293,8 @@ public class RSSService {
         if (maxEntry == null) continue;
         trendWords.remove(maxEntry.getKey());
         top5Trends.add(maxEntry.getKey());
+        logger.info("one of trend words; " + maxEntry.getKey() + " " + maxEntry.getValue());
       }
-      for (String trend : top5Trends) logger.info("one of trend words; " + trend);
       try {
         TimeUnit.HOURS.sleep(2);
       } catch (InterruptedException e) {
