@@ -146,11 +146,13 @@ public class RSSService {
     }
     top5.forEach(
         (k, v) -> {
-          try {
-            NewsRepository.getInstance()
-                .putToTable("trendWords", Bytes.toBytes(k), Bytes.toBytes(id), Bytes.toBytes(v));
-          } catch (IOException e) {
-            logger.warn(e);
+          if (!RssConfig.stopWords.contains(k)) {
+            try {
+              NewsRepository.getInstance()
+                  .putToTable("trendWords", Bytes.toBytes(k), Bytes.toBytes(id), Bytes.toBytes(v));
+            } catch (IOException e) {
+              logger.warn(e);
+            }
           }
         });
   }

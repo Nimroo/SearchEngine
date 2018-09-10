@@ -1,10 +1,15 @@
 package ir.sahab.nimroo.rss;
 
 import ir.sahab.nimroo.hbase.NewsRepository;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Scanner;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.log4j.Logger;
 
 public class RssConfig {
 
@@ -12,10 +17,14 @@ public class RssConfig {
 
   public static int numberOfRssSite;
   public static String newsIndexNameForElastic;
+  public static HashSet<String> stopWords;
 
   public static void load() {
+
+    Logger logger = Logger.getLogger(RssConfig.class);
     String appConfigPath = "rss.properties";
     Properties properties = new Properties();
+    stopWords = new HashSet<>();
 
     try {
       properties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream(appConfigPath));
@@ -29,6 +38,17 @@ public class RssConfig {
       }
     } catch (IOException e) {
       e.printStackTrace();
+    }
+
+    File file = new File("news/src/main/resources/stopWords.txt");
+    Scanner sc = null;
+    try {
+      sc = new Scanner(file);
+    } catch (FileNotFoundException e) {
+      logger.error(e);
+    }
+    while (sc.hasNextLine()) {
+      stopWords.add(sc.nextLine());
     }
   }
 
