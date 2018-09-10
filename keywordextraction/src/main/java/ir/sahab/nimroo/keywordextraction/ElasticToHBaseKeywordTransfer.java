@@ -28,7 +28,7 @@ public class ElasticToHBaseKeywordTransfer {
 	                                     String index, String outputTableString, String outputFamilyString) {
 		Config.load();
 		logger = Logger.getLogger(ElasticToHBaseKeywordTransfer.class);
-		elasticAnalysisClient = new ElasticAnalysisClient();
+		elasticAnalysisClient = new ElasticAnalysisClient(Config.server3Address);
 
 		this.inputTableString = inputTableString;
 		this.inputFamilyString = inputFamilyString;
@@ -74,6 +74,7 @@ public class ElasticToHBaseKeywordTransfer {
 				i++;
 				if (i % 10000 == 0) {
 					logger.info("results number reached to " + i);
+					logger.info("last row key: " + rowKey);
 					List<Pair<String, List<Pair<String, Double>>>> idKeywordScores =
 							elasticAnalysisClient.getInterestingKeywordsForMultiDocuments(index, rows, 5);
 					for (Pair<String, List<Pair<String, Double>>> idKeywordScore:idKeywordScores) {
