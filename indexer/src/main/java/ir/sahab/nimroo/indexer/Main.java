@@ -37,7 +37,7 @@ public class Main {
   private Main() {
     PropertyConfigurator.configure(Main.class.getClassLoader().getResource("log4j.properties"));
     logger = Logger.getLogger(Main.class);
-    elasticClient = new ElasticClient();
+    elasticClient = new ElasticClient(Config.server1Address);
     kafkaHtmlConsumer = new KafkaHtmlConsumer();
     try {
       elasticClient.createIndexForWebPages(Config.elasticsearchIndexName);

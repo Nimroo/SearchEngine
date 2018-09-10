@@ -1,5 +1,6 @@
 package ir.sahab.nimroo.rss;
 
+import ir.sahab.nimroo.Config;
 import ir.sahab.nimroo.elasticsearch.ElasticClient;
 import ir.sahab.nimroo.hbase.NewsRepository;
 import java.io.IOException;
@@ -39,7 +40,7 @@ public class RSSService {
   private ElasticClient elasticClient;
 
   RSSService() {
-    elasticClient = new ElasticClient();
+    elasticClient = new ElasticClient(Config.server1Address);
     PropertyConfigurator.configure(
         RSSService.class.getClassLoader().getResource("log4j.properties"));
     logger = Logger.getLogger(RSSService.class);
