@@ -1,5 +1,6 @@
 package ir.sahab.nimroo.elasticsearch;
 
+import ir.sahab.nimroo.Config;
 import ir.sahab.nimroo.hbase.CrawlerRepository;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -10,7 +11,7 @@ public class SearchUIConnector {
   private ElasticClient elasticClient;
 
   public SearchUIConnector() throws URISyntaxException {
-    elasticClient = new ElasticClient();
+    elasticClient = new ElasticClient(Config.server2Address);
     elasticClient.readObsceneWordsForSearch();
   }
 
