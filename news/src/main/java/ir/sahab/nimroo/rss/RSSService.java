@@ -3,6 +3,7 @@ package ir.sahab.nimroo.rss;
 import ir.sahab.nimroo.Config;
 import ir.sahab.nimroo.elasticsearch.ElasticClient;
 import ir.sahab.nimroo.hbase.NewsRepository;
+import ir.sahab.nimroo.keywordextraction.ElasticAnalysisClient;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -15,7 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -38,14 +39,17 @@ public class RSSService {
   private Logger logger;
   private ExecutorService executorService;
   private ElasticClient elasticClient;
+  private ElasticAnalysisClient elasticAnalysisClient;
+  private Map<String, Double> trendWords;
 
   RSSService() {
+    elasticAnalysisClient = new ElasticAnalysisClient(Config.server3Address);
     elasticClient = new ElasticClient(Config.server1Address);
     PropertyConfigurator.configure(
         RSSService.class.getClassLoader().getResource("log4j.properties"));
     logger = Logger.getLogger(RSSService.class);
     executorService =
-        new ThreadPoolExecutor(20, 20, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(50));
+        new ThreadPoolExecutor(40, 40, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(150));
   }
 
   private void updateNews() throws IOException {
@@ -111,11 +115,31 @@ public class RSSService {
         continue;
       try {
         elasticClient.addNewsToBulkOfElastic(link, title, text, pubDate, DigestUtils.md5Hex(link), RssConfig.newsIndexNameForElastic);
+        executorService.submit(() -> {
+          updateTrendWords(DigestUtils.md5Hex(link));
+        });
         logger.info("correct news add to  bulk of elastic.");
       } catch (IOException e) {
         logger.error("can not add news to elastic", e);
       }
     }
+  }
+
+  private void updateTrendWords(String id){
+    HashMap<String,Double> top5;
+    try {
+      top5 = elasticAnalysisClient.getInterestingKeywords(RssConfig.newsIndexNameForElastic, id, 5);
+    } catch (IOException e) {
+      logger.warn(e);
+      return;
+    }
+    top5.forEach((k, v) -> {
+      try {
+        NewsRepository.getInstance().putToTable("trendWords", Bytes.toBytes(k), Bytes.toBytes(id), Bytes.toBytes(v));
+      } catch (IOException e) {
+        logger.warn(e);
+      }
+    });
   }
 
   private Date reFormatPublishDate(String pubDate) {
