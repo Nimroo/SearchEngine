@@ -15,6 +15,7 @@ import org.apache.log4j.PropertyConfigurator;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.broadcast.Broadcast;
 import scala.Tuple2;
 
 import java.util.ArrayList;
@@ -72,14 +73,15 @@ public class KeywordExtractor {
 
 		JavaPairRDD<String, List<Tuple2<String, Double>>> domainListKeywordRDD = extractDomainListKeywordsRDD(domainWordScore);
 
+		Broadcast<String> outputFamilyBC = javaSparkContext.broadcast(outputFamily);
 		JavaPairRDD<ImmutableBytesWritable, Put> hBasePuts = domainListKeywordRDD.mapToPair(domainSinkDomainScores -> {
 			String domain = domainSinkDomainScores._1;
 			List<Tuple2<String, Double>> keywords = domainSinkDomainScores._2;
 
 			Put put = new Put(DigestUtils.md5Hex(domain).getBytes());
-			put.addColumn(Bytes.toBytes(outputFamily), Bytes.toBytes("domain"), Bytes.toBytes(domain));
+			put.addColumn(Bytes.toBytes(outputFamilyBC.getValue()), Bytes.toBytes("domain"), Bytes.toBytes(domain));
 			for (Tuple2<String, Double> keyword:keywords) {
-				put.addColumn(Bytes.toBytes(outputFamily), Bytes.toBytes(keyword._1), Bytes.toBytes(keyword._2));
+				put.addColumn(Bytes.toBytes(outputFamilyBC.getValue()), Bytes.toBytes(keyword._1), Bytes.toBytes(keyword._2));
 			}
 
 			return new Tuple2<>(new ImmutableBytesWritable(), put);

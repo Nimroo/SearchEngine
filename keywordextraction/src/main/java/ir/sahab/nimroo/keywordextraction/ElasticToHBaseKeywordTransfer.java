@@ -35,9 +35,7 @@ public class ElasticToHBaseKeywordTransfer {
 		this.index = index;
 		this.outputTableString = outputTableString;
 		this.outputFamilyString = outputFamilyString;
-	}
 
-	public void transferKeywords() {
 		hBaseConfiguration = HBaseConfiguration.create();
 		hBaseConfiguration.addResource(Config.hBaseSite);
 		hBaseConfiguration.addResource(Config.hadoopCoreSite);
@@ -49,7 +47,9 @@ public class ElasticToHBaseKeywordTransfer {
 		} catch (IOException e) {
 			logger.error("can not get connection from HBase!", e);
 		}
+	}
 
+	public void transferKeywords() {
 		Scan scan = new Scan();
 		scan.setCaching(500);
 		scan.setCacheBlocks(false);
@@ -125,5 +125,29 @@ public class ElasticToHBaseKeywordTransfer {
 		} catch (IOException e) {
 			logger.error("Error in working with results: ", e);
 		}
+	}
+
+
+	public void tansferKeywordsWithMultiTreading(String startRow) {
+		Scan scan = new Scan();
+		scan.setCaching(500);
+		scan.setCacheBlocks(false);
+		scan.setStartRow(Bytes.toBytes(startRow));
+		scan.addColumn(Bytes.toBytes(inputFamilyString), Bytes.toBytes("url"));
+		try {
+			resultScanner = inputTable.getScanner(scan);
+		} catch (IOException e) {
+			logger.error("Couldn't get ResultScanner from scan", e);
+		}
+
+		int i = 0;
+		List<String> rows = new ArrayList<>(10005); //consider using LinkedList
+		Map<String, String> rowsAndUrls = new HashMap<>(10005);
+		String rowKey = null;
+		byte[] urlBytes = null;
+
+		Thread thread1 = new Thread(() -> {
+
+		});
 	}
 }
