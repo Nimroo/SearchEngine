@@ -28,7 +28,7 @@ public class ElasticToHBaseKeywordTransfer {
 	                                     String index, String outputTableString, String outputFamilyString) {
 		Config.load();
 		logger = Logger.getLogger(ElasticToHBaseKeywordTransfer.class);
-		elasticAnalysisClient = new ElasticAnalysisClient();
+		elasticAnalysisClient = new ElasticAnalysisClient(Config.server3Address);
 
 		this.inputTableString = inputTableString;
 		this.inputFamilyString = inputFamilyString;
@@ -53,7 +53,8 @@ public class ElasticToHBaseKeywordTransfer {
 		Scan scan = new Scan();
 		scan.setCaching(500);
 		scan.setCacheBlocks(false);
-		scan.addFamily(Bytes.toBytes(inputFamilyString));
+		//scan.addFamily(Bytes.toBytes(inputFamilyString));
+		scan.addColumn(Bytes.toBytes(inputFamilyString), Bytes.toBytes("url"));
 		try {
 			resultScanner = inputTable.getScanner(scan);
 		} catch (IOException e) {
@@ -63,19 +64,24 @@ public class ElasticToHBaseKeywordTransfer {
 		int i = 0;
 		List<String> rows = new ArrayList<>(10005); //consider using LinkedList
 		Map<String, String> rowsAndUrls = new HashMap<>(10005);
+		String rowKey = null;
+		byte[] urlBytes = null;
 
 		try {
 			for (Result result = resultScanner.next(); result != null; result = resultScanner.next()) {
-				String rowKey = Bytes.toString(result.getRow());
+				rowKey = Bytes.toString(result.getRow());
 				rows.add(rowKey);
-				byte[] urlBytes = result.getValue(Bytes.toBytes(inputFamilyString), Bytes.toBytes("url"));
+				urlBytes = result.getValue(Bytes.toBytes(inputFamilyString), Bytes.toBytes("url"));
 				rowsAndUrls.put(rowKey, Bytes.toString(urlBytes));
 
 				i++;
 				if (i % 10000 == 0) {
 					logger.info("results number reached to " + i);
+					logger.info("last row key: " + rowKey);
+					logger.info("last link: " + Bytes.toString(urlBytes));
 					List<Pair<String, List<Pair<String, Double>>>> idKeywordScores =
 							elasticAnalysisClient.getInterestingKeywordsForMultiDocuments(index, rows, 5);
+					logger.info("result got from elasticSearch.");
 					for (Pair<String, List<Pair<String, Double>>> idKeywordScore:idKeywordScores) {
 						String rowKeyString = idKeywordScore.getKey();
 						List<Pair<String, Double>> keywordsScore = idKeywordScore.getValue();
@@ -89,15 +95,18 @@ public class ElasticToHBaseKeywordTransfer {
 						}
 						outputTable.put(put);
 					}
-
+					logger.info("puts to hBase completed.");
 					rows.clear();
 					rowsAndUrls.clear();
 				}
 			}
 
 			logger.info("results number reached to " + i);
+			logger.info("last row key: " + rowKey);
+			logger.info("last link: " + Bytes.toString(urlBytes));
 			List<Pair<String, List<Pair<String, Double>>>> idKeywordScores =
 					elasticAnalysisClient.getInterestingKeywordsForMultiDocuments(index, rows, 5);
+			logger.info("result got from elasticSearch.");
 			for (Pair<String, List<Pair<String, Double>>> idKeywordScore:idKeywordScores) {
 				String rowKeyString = idKeywordScore.getKey();
 				List<Pair<String, Double>> keywordsScore = idKeywordScore.getValue();
@@ -111,6 +120,7 @@ public class ElasticToHBaseKeywordTransfer {
 				}
 				outputTable.put(put);
 			}
+			logger.info("puts to hBase completed.");
 
 		} catch (IOException e) {
 			logger.error("Error in working with results: ", e);

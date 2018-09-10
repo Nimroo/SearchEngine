@@ -61,7 +61,7 @@ public class ElasticsearchUI {
   }
 */
   public void start() throws URISyntaxException {
-    elasticClient = new ElasticClient();
+    elasticClient = new ElasticClient(Config.server1Address);
     elasticClient.readObsceneWordsForSearch();
     scanner = new Scanner(System.in);
     while (true) {

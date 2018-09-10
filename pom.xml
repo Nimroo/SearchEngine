@@ -19,6 +19,7 @@
     <module>other</module>
     <module>indexer</module>
     <module>keywordextraction</module>
+    <module>analyzeapi</module>
   </modules>
 
   <name>nimroo</name>
