@@ -2,6 +2,7 @@ package ir.sahab.nimroo.mapreduce;
 
 import ir.sahab.nimroo.Config;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -124,20 +125,18 @@ public class Top5Anchors {
 
     private int numRecords = 0;
     @Override
-    public void map(ImmutableBytesWritable row, Result values, Context context) {
+    public void map(ImmutableBytesWritable row, Result values, Context context)
+        throws IOException, InterruptedException {
       BytesWritable link;
       BytesWritable anchor;
       for(Cell cell : values.listCells()){
-        if(CellUtil.cloneQualifier(cell).equals(Bytes.toBytes("url")))
+        if(Arrays.equals(CellUtil.cloneQualifier(cell), Bytes.toBytes("url")))
           continue;
         if(uselessAnchors.contains(Bytes.toString(CellUtil.cloneValue(cell))))
           continue;
         link = new BytesWritable(Bytes.toBytes(DigestUtils.md5Hex(Bytes.toString(CellUtil.cloneQualifier(cell)))));
         anchor = new BytesWritable(Bytes.toBytes(Bytes.toString(CellUtil.cloneValue(cell)).toLowerCase()));
-        try {
-          context.write(link,anchor);
-        } catch (IOException | InterruptedException ignored) {
-        }
+        context.write(link,anchor);
       }
       numRecords++;
       if ((numRecords % 10000) == 0) {
@@ -160,7 +159,8 @@ public class Top5Anchors {
         Pair<BytesWritable, LongWritable> pair = new Pair<>(k,total);
         try {
           context.write(key, pair);
-        } catch (IOException | InterruptedException ignored) {
+        } catch (IOException | InterruptedException e) {
+          e.printStackTrace();
         }
       });
     }
@@ -169,13 +169,18 @@ public class Top5Anchors {
   public static class TopAnchorReducer extends TableReducer<BytesWritable, Pair<BytesWritable, LongWritable>, BytesWritable> {
     HashMap<BytesWritable, Long> hashMap = new HashMap<>();
     @Override
-    public void reduce(BytesWritable key, Iterable<Pair<BytesWritable, LongWritable>> values, Context context) {
+    public void reduce(BytesWritable key, Iterable<Pair<BytesWritable, LongWritable>> values, Context context)
+        throws IOException, InterruptedException {
+      Put pp = new Put(Bytes.toBytes("1"));
+      pp.addColumn(Bytes.toBytes("anchor"), Bytes.toBytes(1), Bytes.toBytes(2));
+      context.write(key, pp);
       for(Pair<BytesWritable, LongWritable> tmp : values){
         if(!hashMap.containsKey(tmp.getFirst()))
           hashMap.put(tmp.getFirst(), tmp.getSecond().get());
         else
           hashMap.replace(tmp.getFirst(), hashMap.get(tmp.getFirst()) + tmp.getSecond().get());
       }
+      Put put = new Put(key.getBytes());
       Map.Entry<BytesWritable, Long> maxEntry;
       for (int i = 0; i < Math.min(5, hashMap.size()); i++) {
         maxEntry = null;
@@ -186,17 +191,14 @@ public class Top5Anchors {
         }
         if (maxEntry == null) continue;
         hashMap.remove(maxEntry.getKey());
-        Put put = new Put(key.getBytes());
         put.addColumn(Bytes.toBytes("anchor"), Bytes.toBytes(i), maxEntry.getKey().getBytes());
-        try {
-          context.write(key, put);
-        } catch (IOException | InterruptedException ignored) {
-        }
       }
+      context.write(key, put);
     }
   }
 
   public static void main(String[] args) throws Exception {
+    Config.load();
     Configuration config = HBaseConfiguration.create();
     config.addResource(new Path(Config.hBaseSite));
     config.addResource(new Path(Config.hadoopCoreSite));
@@ -208,7 +210,7 @@ public class Top5Anchors {
     scan.setCaching(500);
     scan.setCacheBlocks(false);
     scan.addFamily(Bytes.toBytes("outLink"));
-    scan.setStopRow(Bytes.toBytes("000001b267c1829f8e737d63d726dc00"));
+    scan.setStopRow(Bytes.toBytes("000000d3e3f87b98af900d15f9e9b187"));
 
     TableMapReduceUtil.initTableMapperJob(
         "crawler", scan, Top5Anchors.TopAnchorMapper.class, BytesWritable.class, BytesWritable.class, job);
