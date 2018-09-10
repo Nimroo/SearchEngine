@@ -64,20 +64,24 @@ public class ElasticToHBaseKeywordTransfer {
 		int i = 0;
 		List<String> rows = new ArrayList<>(10005); //consider using LinkedList
 		Map<String, String> rowsAndUrls = new HashMap<>(10005);
+		String rowKey = null;
+		byte[] urlBytes = null;
 
 		try {
 			for (Result result = resultScanner.next(); result != null; result = resultScanner.next()) {
-				String rowKey = Bytes.toString(result.getRow());
+				rowKey = Bytes.toString(result.getRow());
 				rows.add(rowKey);
-				byte[] urlBytes = result.getValue(Bytes.toBytes(inputFamilyString), Bytes.toBytes("url"));
+				urlBytes = result.getValue(Bytes.toBytes(inputFamilyString), Bytes.toBytes("url"));
 				rowsAndUrls.put(rowKey, Bytes.toString(urlBytes));
 
 				i++;
 				if (i % 10000 == 0) {
 					logger.info("results number reached to " + i);
 					logger.info("last row key: " + rowKey);
+					logger.info("last link: " + Bytes.toString(urlBytes));
 					List<Pair<String, List<Pair<String, Double>>>> idKeywordScores =
 							elasticAnalysisClient.getInterestingKeywordsForMultiDocuments(index, rows, 5);
+					logger.info("result got from elasticSearch.");
 					for (Pair<String, List<Pair<String, Double>>> idKeywordScore:idKeywordScores) {
 						String rowKeyString = idKeywordScore.getKey();
 						List<Pair<String, Double>> keywordsScore = idKeywordScore.getValue();
@@ -91,15 +95,18 @@ public class ElasticToHBaseKeywordTransfer {
 						}
 						outputTable.put(put);
 					}
-
+					logger.info("puts to hBase completed.");
 					rows.clear();
 					rowsAndUrls.clear();
 				}
 			}
 
 			logger.info("results number reached to " + i);
+			logger.info("last row key: " + rowKey);
+			logger.info("last link: " + Bytes.toString(urlBytes));
 			List<Pair<String, List<Pair<String, Double>>>> idKeywordScores =
 					elasticAnalysisClient.getInterestingKeywordsForMultiDocuments(index, rows, 5);
+			logger.info("result got from elasticSearch.");
 			for (Pair<String, List<Pair<String, Double>>> idKeywordScore:idKeywordScores) {
 				String rowKeyString = idKeywordScore.getKey();
 				List<Pair<String, Double>> keywordsScore = idKeywordScore.getValue();
@@ -113,6 +120,7 @@ public class ElasticToHBaseKeywordTransfer {
 				}
 				outputTable.put(put);
 			}
+			logger.info("puts to hBase completed.");
 
 		} catch (IOException e) {
 			logger.error("Error in working with results: ", e);
