@@ -18,6 +18,7 @@
     <module>mapreduce</module>
     <module>other</module>
     <module>indexer</module>
+    <module>keywordextraction</module>
   </modules>
 
   <name>nimroo</name>
