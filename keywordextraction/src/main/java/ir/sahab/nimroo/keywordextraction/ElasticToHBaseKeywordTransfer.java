@@ -53,7 +53,8 @@ public class ElasticToHBaseKeywordTransfer {
 		Scan scan = new Scan();
 		scan.setCaching(500);
 		scan.setCacheBlocks(false);
-		scan.addFamily(Bytes.toBytes(inputFamilyString));
+		//scan.addFamily(Bytes.toBytes(inputFamilyString));
+		scan.addColumn(Bytes.toBytes(inputFamilyString), Bytes.toBytes("url"));
 		try {
 			resultScanner = inputTable.getScanner(scan);
 		} catch (IOException e) {
