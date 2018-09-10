@@ -98,6 +98,15 @@ public class NewsRepository {
     return table.getScanner(scan);
   }
 
+  public ResultScanner getResultScannerWithTimeRange(String familyName, long startTime, long endTime) throws IOException {
+    Scan scan = new Scan();
+    scan.setCaching(500);
+    scan.setCacheBlocks(false);
+    scan.addFamily(Bytes.toBytes(familyName));
+    scan.setTimeRange(startTime, endTime);
+    return table.getScanner(scan);
+  }
+
   public ResultScanner getResultScanner(String familyName, String columnName) throws IOException {
     Scan scan = new Scan();
     scan.setCaching(500);
