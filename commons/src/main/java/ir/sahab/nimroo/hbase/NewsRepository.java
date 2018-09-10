@@ -61,7 +61,6 @@ public class NewsRepository {
       table = connection.getTable(TableName.valueOf(tableName));
     } catch (IOException e) {
       logger.error("can not get connection from HBase!", e);
-      System.exit(599);
     }
   }
 

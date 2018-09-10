@@ -66,7 +66,6 @@ public class CrawlerRepository {
       table = connection.getTable(TableName.valueOf(tableName));
     } catch (IOException e) {
       logger.error("can not get ir.sahab.nimroo.connection from HBase!", e);
-      System.exit(499);
     }
   }
 
