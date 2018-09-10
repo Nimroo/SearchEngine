@@ -9,8 +9,14 @@ public class Analyzer {
 		domainExtractor.extractDomain();
 		*/
 
+		/*
 		DomainPageRankLauncher domainPageRankLauncher = new DomainPageRankLauncher(
 				"domain", "domainGraph", "pageRankDomain", "pageRank");
 		domainPageRankLauncher.launchPageRank(40);
+		*/
+
+		KeywordExtractor keywordExtractor = new KeywordExtractor("urlKeyword",
+				"keywords", "domKeyword", "keywords");
+		keywordExtractor.extractKeywords();
 	}
 }
