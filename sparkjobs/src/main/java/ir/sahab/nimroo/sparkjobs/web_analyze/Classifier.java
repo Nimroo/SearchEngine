@@ -17,19 +17,19 @@ import java.util.List;
 
 public class Classifier {
 	private static Logger logger = Logger.getLogger(Classifier.class);
-	private static String inputTableDomain, inputFamilyDomain, inputTableWordAndClass,
-			inputFamilyWordAndClass, outputTable, outputFamily; //static for serialization
+	private String inputTableDomain, inputFamilyDomain, inputTableWordAndClass,
+			inputFamilyWordAndClass, outputTable, outputFamily;
 	private HBaseAPI hBaseAPI;
 	private JavaSparkContext javaSparkContext;
 
 	public Classifier(String inputTableDomain, String inputFamilyDomain, String inputTableWordAndClass,
-	                  String inputFamilyWordAndClass, String outputTable, String outputFamily) { //todo
-		Classifier.inputTableDomain = inputTableDomain;
-		Classifier.inputFamilyDomain = inputFamilyDomain;
-		Classifier.inputTableWordAndClass = inputTableWordAndClass;
-		Classifier.inputFamilyWordAndClass = inputFamilyWordAndClass;
-		Classifier.outputTable = outputTable;
-		Classifier.outputFamily = outputFamily;
+	                  String inputFamilyWordAndClass, String outputTable, String outputFamily) {
+		this.inputTableDomain = inputTableDomain;
+		this.inputFamilyDomain = inputFamilyDomain;
+		this.inputTableWordAndClass = inputTableWordAndClass;
+		this.inputFamilyWordAndClass = inputFamilyWordAndClass;
+		this.outputTable = outputTable;
+		this.outputFamily = outputFamily;
 
 		hBaseAPI = new HBaseAPI();
 
@@ -66,7 +66,7 @@ public class Classifier {
 
 		JavaPairRDD<String, List<String>> keywordDomainsRDD = getKeywordDomainsRDD(domainKeywordsRDD);
 
-		
+		//todo
 	}
 
 

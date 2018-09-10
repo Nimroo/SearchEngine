@@ -14,3 +14,4 @@ http://yahoo.com/bbb a2 3
 http://yahoo.com/bbb a3 3
 http://yahoo.com/bbb b5 3
 http://yahoo.com/bbb b5 3
+http://test.com t1 0.3

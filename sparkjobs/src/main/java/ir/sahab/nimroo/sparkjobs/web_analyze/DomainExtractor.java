@@ -15,6 +15,7 @@ import org.apache.log4j.PropertyConfigurator;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.broadcast.Broadcast;
 import scala.Tuple2;
 
 import java.util.ArrayList;
@@ -22,7 +23,7 @@ import java.util.List;
 
 public class DomainExtractor {
 	private static Logger logger = Logger.getLogger(DomainExtractor.class);
-	private static String inputTable, inputFamily, outputTable, outputFamily; //static for serialization todo
+	private String inputTable, inputFamily, outputTable, outputFamily;
 	private JavaSparkContext javaSparkContext;
 	private HBaseAPI hBaseAPI;
 
@@ -31,10 +32,10 @@ public class DomainExtractor {
 	public DomainExtractor(String inputTable, String inputFamily, String outputTable, String outputFamily) {
 		PropertyConfigurator.configure(DomainExtractor.class.getClassLoader().getResource("log4j.properties"));
 
-		DomainExtractor.inputTable = inputTable;
-		DomainExtractor.inputFamily = inputFamily;
-		DomainExtractor.outputTable = outputTable;
-		DomainExtractor.outputFamily = outputFamily;
+		this.inputTable = inputTable;
+		this.inputFamily = inputFamily;
+		this.outputTable = outputTable;
+		this.outputFamily = outputFamily;
 
 		SparkConf sparkConf = new SparkConf();
 		sparkConf.setAppName("Domain Extractor");
@@ -77,14 +78,15 @@ public class DomainExtractor {
 		domainSinkDomain = domainSinkDomain.reduceByKey((a, b) -> a + b);
 
 		// can write a mapreduce to complete rows
+		Broadcast<String> outputFamilyBC = javaSparkContext.broadcast(outputFamily);
 		JavaPairRDD<ImmutableBytesWritable, Put> hBasePuts = domainSinkDomain.mapToPair(domainSinkDomainNum -> {
 			String domain = domainSinkDomainNum._1._1;
 			String sinkDomain = domainSinkDomainNum._1._2;
 			int edgeNumber = domainSinkDomainNum._2;
 
 			Put put = new Put(Bytes.toBytes(DigestUtils.md5Hex(domain)));
-			put.addColumn(Bytes.toBytes(outputFamily), Bytes.toBytes("domain"), Bytes.toBytes(domain));     //todo
-			put.addColumn(Bytes.toBytes(outputFamily), Bytes.toBytes(sinkDomain), Bytes.toBytes(edgeNumber));  //todo
+			put.addColumn(Bytes.toBytes(outputFamilyBC.getValue()), Bytes.toBytes("domain"), Bytes.toBytes(domain));
+			put.addColumn(Bytes.toBytes(outputFamilyBC.getValue()), Bytes.toBytes(sinkDomain), Bytes.toBytes(edgeNumber));
 
 			return new Tuple2<>(new ImmutableBytesWritable(), put);
 		});
