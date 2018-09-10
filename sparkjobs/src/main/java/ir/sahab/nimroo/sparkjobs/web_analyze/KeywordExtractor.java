@@ -78,7 +78,7 @@ public class KeywordExtractor {
 			String domain = domainSinkDomainScores._1;
 			List<Tuple2<String, Double>> keywords = domainSinkDomainScores._2;
 
-			Put put = new Put(DigestUtils.md5Hex(domain).getBytes());
+			Put put = new Put(Bytes.toBytes(DigestUtils.md5Hex(domain)));
 			put.addColumn(Bytes.toBytes(outputFamilyBC.getValue()), Bytes.toBytes("domain"), Bytes.toBytes(domain));
 			for (Tuple2<String, Double> keyword:keywords) {
 				put.addColumn(Bytes.toBytes(outputFamilyBC.getValue()), Bytes.toBytes(keyword._1), Bytes.toBytes(keyword._2));

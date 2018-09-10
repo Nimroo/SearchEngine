@@ -128,7 +128,7 @@ public class ElasticToHBaseKeywordTransfer {
 	}
 
 
-	public void tansferKeywordsWithMultiTreading(String startRow) {
+	public void tansferKeywordsWithMultiTreading(String startRow) { //todo
 		Scan scan = new Scan();
 		scan.setCaching(500);
 		scan.setCacheBlocks(false);
