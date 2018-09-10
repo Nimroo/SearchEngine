@@ -53,6 +53,7 @@ public class KeywordExtractor {
 			List<Cell> cells = result.listCells();
 
 			String domain = null;
+			List<Tuple2<String, Double>> wordScore = new ArrayList<>();
 			List<Tuple2<Tuple2<String,String>, Double>> domainWordFirstScore = new ArrayList<>();
 
 			for (Cell cell:cells) {
@@ -64,8 +65,12 @@ public class KeywordExtractor {
 				else {
 					String word = Bytes.toString(CellUtil.cloneQualifier(cell));
 					double score = Bytes.toDouble(CellUtil.cloneValue(cell));
-					domainWordFirstScore.add(new Tuple2<>(new Tuple2<>(domain, word), score));
+					wordScore.add(new Tuple2<>(word, score));
 				}
+			}
+
+			for (Tuple2<String, Double> tuple2: wordScore) {
+				domainWordFirstScore.add(new Tuple2<>(new Tuple2<>(domain, tuple2._1), tuple2._2));
 			}
 
 			return domainWordFirstScore.iterator();
