@@ -18,9 +18,9 @@ import java.util.*;
 public class ElasticAnalysisClient {
   private RestClient client;
 
-  public ElasticAnalysisClient() {
+  public ElasticAnalysisClient(String serverAddress) {
     client =
-        RestClient.builder(new HttpHost("46.4.99.108", 9200, "http"))
+        RestClient.builder(new HttpHost(serverAddress, 9200, "http"))
             .setRequestConfigCallback(
                 requestConfigBuilder ->
                     requestConfigBuilder.setConnectTimeout(5000).setSocketTimeout(60000))

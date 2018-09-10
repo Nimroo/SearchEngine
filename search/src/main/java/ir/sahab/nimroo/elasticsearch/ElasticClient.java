@@ -40,10 +40,10 @@ public class ElasticClient {
   private Logger logger = Logger.getLogger(ElasticClient.class);
   private boolean safeSearch;
 
-  public ElasticClient() {
+  public ElasticClient(String serverAddress) {
     client =
         new RestHighLevelClient(
-            RestClient.builder(new HttpHost(Config.server1Address, 9200, "http"))
+            RestClient.builder(new HttpHost(serverAddress, 9200, "http"))
                 .setRequestConfigCallback(
                     requestConfigBuilder ->
                         requestConfigBuilder.setConnectTimeout(5000).setSocketTimeout(600000))
