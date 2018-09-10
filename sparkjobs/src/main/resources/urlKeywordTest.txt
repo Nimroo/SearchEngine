@@ -1,0 +1,17 @@
+http://google.com/aaa a1 2.5
+http://google.com/aaa a2 1.2
+http://google.com/aaa a3 1
+http://google.com/aaa a4 1.5
+http://google.com/bbb b1 0.1
+http://google.com/bbb b2 0.2
+http://yahoo.com/aaa a1 1
+http://yahoo.com/aaa a2 2
+http://yahoo.com/aaa a3 3
+http://yahoo.com/aaa a4 4
+http://yahoo.com/aaa a5 5
+http://yahoo.com/bbb a1 3
+http://yahoo.com/bbb a2 3
+http://yahoo.com/bbb a3 3
+http://yahoo.com/bbb b5 3
+http://yahoo.com/bbb b5 3
+http://test.com t1 0.3

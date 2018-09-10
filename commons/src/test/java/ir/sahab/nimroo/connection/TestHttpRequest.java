@@ -1,0 +1,64 @@
+package ir.sahab.nimroo.connection;
+
+import javafx.util.Pair;
+import org.asynchttpclient.Response;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+
+public class TestHttpRequest {
+
+    private static String blankPage;
+
+    @BeforeClass
+    public static void setUp() throws IOException, URISyntaxException {
+        blankPage = new String(Files.readAllBytes(Paths.get(TestHttpRequest.class.getClassLoader()
+                .getResource("blankpage.txt").toURI())));
+        HttpRequest.init();
+    }
+
+    @Test
+    public void testGet() throws ExecutionException, InterruptedException {
+        HttpRequest httpRequest = new HttpRequest("http://example.com/");
+        httpRequest.setMethod(HttpRequest.HTTP_REQUEST.GET);
+        Response response = httpRequest.send().get();
+        Assert.assertEquals(response.getResponseBody(), blankPage);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetWithWrongUrl() throws ExecutionException, InterruptedException {
+        HttpRequest httpRequest = new HttpRequest("blankwebsite");
+        httpRequest.setMethod(HttpRequest.HTTP_REQUEST.GET);
+        httpRequest.send().get();
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testSetHeaderBeforeSettingMethod() {
+        HttpRequest httpRequest = new HttpRequest("blankwebsite");
+        List<Pair<String, String>> list = new ArrayList<>();
+        httpRequest.setHeaders(list);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testSetRequestTimeoutBeforeSettingMethod() {
+        HttpRequest httpRequest = new HttpRequest("blankwebsite");
+        httpRequest.setRequestTimeout(1000);
+    }
+
+    @Test()
+    public void testAvoidDownloadFiles() throws ExecutionException, InterruptedException {
+        HttpRequest httpRequest = new HttpRequest("https://desktop.githubusercontent.com/releases/1.3.2-ed5395e6/GitHubDesktopSetup.exe");
+        httpRequest.setMethod(HttpRequest.HTTP_REQUEST.GET);
+        Response response = httpRequest.send().get();
+        Assert.assertFalse(response.hasResponseBody());
+    }
+
+}
