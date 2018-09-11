@@ -75,7 +75,7 @@ public class NimrooJsonRpcService {
             return new ArrayList<>(searchUIConnector.newsSearch(query, "newsindex"));
         }
         catch (Exception e) {
-            System.out.println(e);
+            logger.error(e);
         }
         throw new Exception("shit");
     }
