@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.Cell;
+import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
@@ -119,6 +121,15 @@ public class NewsRepository {
       throws IOException {
     Put put = new Put(key).addColumn(Bytes.toBytes(family), column, value);
     table.put(put);
+  }
+
+  public ArrayList<String> getTop10Trends() throws IOException {
+    ArrayList<String> trends = new ArrayList<>();
+    Get get = new Get(Bytes.toBytes("top10")).addFamily(Bytes.toBytes("trendWords"));
+    Result result = table.get(get);
+    for(Cell cell : result.listCells())
+      trends.add(Bytes.toString(CellUtil.cloneValue(cell)));
+    return trends;
   }
 
   public Result getFromTable(String family, byte[] column, byte[] key)

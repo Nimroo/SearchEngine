@@ -1,4 +1,4 @@
-package ir.sahab.nimroo.sparkjobs.web_analyze;
+package ir.sahab.nimroo.sparkjobs.webanalyze;
 
 public class Analyzer {
 
@@ -15,8 +15,22 @@ public class Analyzer {
 		domainPageRankLauncher.launchPageRank(40);
 		*/
 
+/*
 		KeywordExtractor keywordExtractor = new KeywordExtractor("urlKeyword",
-				"keywords", "domKeyword", "keywords");
+				"keywords", "finalDomKeyword", "keywords");
 		keywordExtractor.extractKeywords();
+*/
+
+/*
+		KeywordRelationFinder keywordRelationFinder = new KeywordRelationFinder(
+				"domain", "domainGraph", "finalDomKeyword",
+				"keywords", "keywordRelation", "relations");
+		keywordRelationFinder.findKeywordRelation();
+*/
+
+		DomainReverser domainReverser = new DomainReverser("domain", "domainGraph",
+				"reverseDomain", "domainGraph");
+		domainReverser.reverseDomains();
+
 	}
 }

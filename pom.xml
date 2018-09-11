@@ -19,7 +19,7 @@
     <module>other</module>
     <module>indexer</module>
     <module>keywordextraction</module>
-    <module>analyzeapi</module>
+      <module>webservice</module>
   </modules>
 
   <name>nimroo</name>
@@ -151,7 +151,7 @@
           <configuration>
             <archive>
               <manifest>
-                <mainClass>ir.sahab.nimroo.ir.sahab.nimroo.searchapi.ServerLauncher</mainClass>
+                <mainClass>ir.sahab.nimroo.ir.sahab.nimroo.webserver.ServerLauncher</mainClass>
               </manifest>
               <manifest>
                 <mainClass>ir.sahab.crawler.CrawlerLauncher</mainClass>

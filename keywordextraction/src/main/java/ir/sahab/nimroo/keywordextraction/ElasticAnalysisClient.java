@@ -23,8 +23,8 @@ public class ElasticAnalysisClient {
         RestClient.builder(new HttpHost(serverAddress, 9200, "http"))
             .setRequestConfigCallback(
                 requestConfigBuilder ->
-                    requestConfigBuilder.setConnectTimeout(5000).setSocketTimeout(60000))
-            .setMaxRetryTimeoutMillis(60000)
+                    requestConfigBuilder.setConnectTimeout(5000).setSocketTimeout(600000))
+            .setMaxRetryTimeoutMillis(600000)
             .build();
   }
 

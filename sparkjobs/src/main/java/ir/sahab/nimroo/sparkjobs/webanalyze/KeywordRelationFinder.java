@@ -1,4 +1,4 @@
-package ir.sahab.nimroo.sparkjobs.web_analyze;
+package ir.sahab.nimroo.sparkjobs.webanalyze;
 
 import ir.sahab.nimroo.sparkjobs.HBaseAPI;
 import org.apache.hadoop.hbase.Cell;
@@ -13,6 +13,7 @@ import org.apache.log4j.PropertyConfigurator;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.broadcast.Broadcast;
 import scala.Tuple2;
 
 import java.util.ArrayList;
@@ -20,8 +21,8 @@ import java.util.List;
 
 public class KeywordRelationFinder {
 	private static Logger logger = Logger.getLogger(KeywordExtractor.class);
-	private static String inputTable, inputFamily, inputTable2, inputFamily2,
-			outputTable, outputFamily; //static for serialization
+	private String inputTable, inputFamily, inputTable2, inputFamily2,
+			outputTable, outputFamily;
 	private HBaseAPI hBaseAPI;
 	private JavaSparkContext javaSparkContext;
 
@@ -31,15 +32,15 @@ public class KeywordRelationFinder {
 	                             String inputFamily2, String outputTable, String outputFamily) {
 		PropertyConfigurator.configure(KeywordRelationFinder.class.getClassLoader().getResource("log4j.properties"));
 
-		KeywordRelationFinder.inputTable = inputTable;
-		KeywordRelationFinder.inputFamily = inputFamily;
-		KeywordRelationFinder.inputTable2 = inputTable2;
-		KeywordRelationFinder.inputFamily2 = inputFamily2;
-		KeywordRelationFinder.outputTable = outputTable;
-		KeywordRelationFinder.outputFamily = outputFamily;
+		this.inputTable = inputTable;
+		this.inputFamily = inputFamily;
+		this.inputTable2 = inputTable2;
+		this.inputFamily2 = inputFamily2;
+		this.outputTable = outputTable;
+		this.outputFamily = outputFamily;
 
 		SparkConf sparkConf = new SparkConf();
-		sparkConf.setAppName("Keyword Extractor");
+		sparkConf.setAppName("Keyword Relation Finder");
 		javaSparkContext = new JavaSparkContext(sparkConf);
 
 		hBaseAPI = new HBaseAPI();
@@ -51,13 +52,14 @@ public class KeywordRelationFinder {
 
 		JavaPairRDD<Tuple2<String, String>, Integer> domKwSinkKw = extractKeywordPoints(domainSinkDomain, domainKeyword);
 
+		Broadcast<String> outputFamilyBC = javaSparkContext.broadcast(outputFamily);
 		JavaPairRDD<ImmutableBytesWritable, Put> hBasePuts = domKwSinkKw.mapToPair(pairKeywordAndScore -> {
 			String fromKw = pairKeywordAndScore._1._1;
 			String toKw = pairKeywordAndScore._1._2;
 			int number = pairKeywordAndScore._2;
 
 			Put put = new Put(Bytes.toBytes(fromKw));
-			put.addColumn(Bytes.toBytes(outputFamily), Bytes.toBytes(toKw), Bytes.toBytes(number));
+			put.addColumn(Bytes.toBytes(outputFamilyBC.getValue()), Bytes.toBytes(toKw), Bytes.toBytes(number));
 
 			return new Tuple2<>(new ImmutableBytesWritable(), put);
 		});
@@ -116,7 +118,7 @@ public class KeywordRelationFinder {
 
 	private JavaPairRDD<String, List<String>> extractDomainAndList(String inputTable, String inputFamily) {
 		JavaPairRDD<ImmutableBytesWritable, Result> hBaseRDD =
-				hBaseAPI.getRDD(javaSparkContext, inputTable, inputFamily);
+				hBaseAPI.getRDD(javaSparkContext, inputTable, inputFamily, "0", "01");
 
 		return hBaseRDD.mapToPair(pairRow -> {
 			Result result = pairRow._2;

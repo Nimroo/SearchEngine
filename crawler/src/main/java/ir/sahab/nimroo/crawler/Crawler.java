@@ -1,9 +1,9 @@
 package ir.sahab.nimroo.crawler;
 
 import com.codahale.metrics.*;
-import com.codahale.metrics.Timer;
 import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
+import com.codahale.metrics.jmx.JmxReporter;
 import ir.sahab.nimroo.Config;
 import ir.sahab.nimroo.connection.HttpRequest;
 import ir.sahab.nimroo.crawler.cache.DummyDomainCache;
@@ -20,13 +20,12 @@ import javafx.util.Pair;
 import org.apache.log4j.Logger;
 
 import java.net.InetSocketAddress;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class Crawler {
-
-
 
     private final MetricRegistry crawlerMetrics = new MetricRegistry();
     private final Meter dlMeter, parseMeter, crawlMeter, lruPassMeter, lruCheckMeter, enterCrawlMeter,
@@ -48,8 +47,8 @@ public class Crawler {
     private AtomicLong count, prevCount = new AtomicLong(0);
 
     public Crawler() {
-        executorService = new ThreadPoolExecutor(250, 250, 0L,
-                TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(300));
+        executorService = new ThreadPoolExecutor(280, 280, 0L,
+                TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(350));
         scraperService = new ScheduledThreadPoolExecutor(2);
 
         crawlMeter = crawlerMetrics.meter(MetricRegistry.name(Crawler.class, "page", "crawl"));
@@ -82,13 +81,15 @@ public class Crawler {
 
         Graphite graphite = new Graphite(new InetSocketAddress(Config.server1Address, 2003));
         GraphiteReporter graphiteReporter = GraphiteReporter.forRegistry(crawlerMetrics)
-                .prefixedWith("test")
+                .prefixedWith("omlet2")
                 .convertRatesTo(TimeUnit.SECONDS)
                 .convertDurationsTo(TimeUnit.MILLISECONDS)
                 .filter(MetricFilter.ALL)
                 .build(graphite);
         graphiteReporter.start(10, TimeUnit.SECONDS);
 
+        final JmxReporter reporter = JmxReporter.forRegistry(crawlerMetrics).filter(MetricFilter.ALL).build();
+        reporter.start();
     }
 
     public void start() throws InterruptedException {
@@ -107,12 +108,7 @@ public class Crawler {
                 dummyUrlCache.scrap();
             }
             logger.info("Done scrapping");
-        }, 1, 15, TimeUnit.MINUTES);
-
-//        scraperService.scheduleAtFixedRate(()-> {
-//            logger.info("rate in 1 minute: " + (count.get() - prevCount.get() / 60));
-//            prevCount.set(count.get());
-//        }, 1, 1, TimeUnit.MINUTES); // TODO Check this out !!! wasn't working why ?!
+        }, 1, 60, TimeUnit.MINUTES);
 
 
         while (true) {
@@ -134,7 +130,12 @@ public class Crawler {
                 while (true) {
                     try {
                         executorService.submit(() -> {
-                            crawl(link);
+                            try {
+                                crawl(link);
+                            }
+                            catch (Exception e) {
+                                logger.error("Error while crawling link: " + link, e);
+                            }
                         });
                         break;
                     } catch (RejectedExecutionException e) {

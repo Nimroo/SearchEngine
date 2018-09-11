@@ -54,7 +54,7 @@ public class RSSService {
         RSSService.class.getClassLoader().getResource("log4j.properties"));
     logger = Logger.getLogger(RSSService.class);
     executorService =
-        new ThreadPoolExecutor(40, 40, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(150));
+        new ThreadPoolExecutor(40, 40, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(1500));
   }
 
   private void updateNews() throws IOException {
@@ -137,6 +137,12 @@ public class RSSService {
   }
 
   private void updateTrendWordsValue(String id) {
+    try {
+      TimeUnit.MINUTES.sleep(7);
+      elasticClient.addBulkToElastic();
+    } catch (IOException | InterruptedException e) {
+      logger.error(e);
+    }
     HashMap<String, Double> top5;
     try {
       elasticClient.addBulkToElastic();
@@ -158,7 +164,6 @@ public class RSSService {
           }
         });
   }
-
   private Date reFormatPublishDate(String pubDate) {
     ArrayList<SimpleDateFormat> formats = new ArrayList<>();
     formats.add(new SimpleDateFormat("EEE, dd MMM yyyy hh:mm Z"));
@@ -301,6 +306,7 @@ public class RSSService {
         if (maxEntry == null) continue;
         trendWords.remove(maxEntry.getKey());
         top5Trends.add(maxEntry.getKey());
+        NewsRepository.getInstance().putToTable("trendWords", Bytes.toBytes(i), Bytes.toBytes("top10"), Bytes.toBytes(maxEntry.getKey()));
         logger.info("one of trend words; " + maxEntry.getKey() + " " + maxEntry.getValue());
       }
       try {

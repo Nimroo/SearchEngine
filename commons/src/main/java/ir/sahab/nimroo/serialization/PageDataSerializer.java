@@ -5,6 +5,7 @@ import ir.sahab.nimroo.model.Meta;
 import ir.sahab.nimroo.model.PageData;
 
 import java.util.ArrayList;
+import java.util.Optional;
 
 /**
  * @author ArminF96
@@ -22,30 +23,30 @@ public class PageDataSerializer {
   public byte[] serialize(PageData pageData) {
 
     PageDataProto.PageData.Builder pageBuilder = PageDataProto.PageData.newBuilder();
-    pageBuilder.setUrl(pageData.getUrl());
-    pageBuilder.setTitle(pageData.getTitle());
-    pageBuilder.setText(pageData.getText());
+    Optional.ofNullable(pageData.getUrl()).ifPresent(pageBuilder::setUrl);
+    Optional.ofNullable(pageData.getTitle()).ifPresent(pageBuilder::setTitle);
+    Optional.ofNullable(pageData.getText()).ifPresent(pageBuilder::setText);
 
     PageDataProto.Link.Builder linkBuilder = PageDataProto.Link.newBuilder();
     for (Link link : pageData.getLinks()) {
       linkBuilder.clear();
-      linkBuilder.setLink(link.getLink());
-      linkBuilder.setAnchor(link.getAnchor());
+      Optional.ofNullable(link.getLink()).ifPresent(linkBuilder::setLink);
+      Optional.ofNullable(link.getAnchor()).ifPresent(linkBuilder::setAnchor);
       pageBuilder.addLinks(linkBuilder.build());
     }
 
     PageDataProto.Meta.Builder metaBuilder = PageDataProto.Meta.newBuilder();
     for (Meta meta : pageData.getMetas()) {
       metaBuilder.clear();
-      metaBuilder.setName(meta.getName());
-      metaBuilder.setContent(meta.getContent());
-      metaBuilder.setCharset(meta.getCharset());
-      metaBuilder.setHttpEquiv(meta.getHttpEquiv());
-      metaBuilder.setScheme(meta.getScheme());
+      Optional.ofNullable(meta.getName()).ifPresent(metaBuilder::setName);
+      Optional.ofNullable(meta.getContent()).ifPresent(metaBuilder::setContent);
+      Optional.ofNullable(meta.getCharset()).ifPresent(metaBuilder::setCharset);
+      Optional.ofNullable(meta.getHttpEquiv()).ifPresent(metaBuilder::setHttpEquiv);
+      Optional.ofNullable(meta.getScheme()).ifPresent(metaBuilder::setScheme);
       pageBuilder.addMetas(metaBuilder.build());
     }
-    pageBuilder.setH1(pageData.getH1());
-    pageBuilder.addAllH2(pageData.getH2());
+    Optional.ofNullable(pageData.getH1()).ifPresent(pageBuilder::setH1);
+    Optional.ofNullable(pageData.getH2()).ifPresent(pageBuilder::addAllH2);
     PageDataProto.PageData protoPageData = pageBuilder.build();
     return protoPageData.toByteArray();
   }

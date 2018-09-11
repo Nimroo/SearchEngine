@@ -3,6 +3,7 @@ package ir.sahab.nimroo.hbase;
 import static org.apache.hadoop.hbase.util.Bytes.toBytes;
 
 import ir.sahab.nimroo.Config;
+import ir.sahab.nimroo.util.LinkNormalizer;
 import java.io.IOException;
 import java.util.ArrayList;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -169,13 +170,14 @@ public class CrawlerRepository {
   }
 
   public double getPageRank(String link){
+    link = LinkNormalizer.getDomain(link);
     try {
-      return Bytes.toDouble(getFromTable(pageRankFamily,
-          Bytes.toBytes("pageRank"),
-          Bytes.toBytes(DigestUtils.md5Hex(link)))
-          .getValue(toBytes("pageRank"), toBytes("pageRank")));
+      Table table = connection.getTable(TableName.valueOf("pageRankDomain"));
+      Get get = new Get(Bytes.toBytes(DigestUtils.md5Hex(link))).addColumn(Bytes.toBytes("pageRank"), Bytes.toBytes("pageRank"));
+      return Bytes.toDouble(table.get(get).getValue(Bytes.toBytes("pageRank"), Bytes.toBytes("pageRank")));
     } catch (IOException | NullPointerException e) {
-      return 0.50;
+      logger.warn(e);
+      return 0;
     }
   }
 }

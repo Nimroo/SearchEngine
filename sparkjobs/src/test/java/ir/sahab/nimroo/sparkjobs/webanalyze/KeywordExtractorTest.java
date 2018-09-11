@@ -1,4 +1,4 @@
-package ir.sahab.nimroo.sparkjobs.web_analyze;
+package ir.sahab.nimroo.sparkjobs.webanalyze;
 
 import ir.sahab.nimroo.util.LinkNormalizer;
 import org.apache.spark.SparkConf;
