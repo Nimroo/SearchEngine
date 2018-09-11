@@ -1,8 +1,8 @@
 package ir.sahab.nimroo.elasticsearch;
 
-import ir.sahab.nimroo.Config;
 import ir.sahab.nimroo.model.Meta;
 import ir.sahab.nimroo.model.PageData;
+import javafx.util.Pair;
 import org.apache.http.HttpHost;
 import org.apache.log4j.Logger;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
@@ -14,7 +14,6 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.common.lucene.search.function.FunctionScoreQuery;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -34,10 +33,7 @@ import java.util.HashMap;
 import java.util.Scanner;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
-import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
-import static org.elasticsearch.index.query.QueryBuilders.spanOrQuery;
 import static org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders.exponentialDecayFunction;
-import static org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders.randomFunction;
 
 public class ElasticClient {
   private RestHighLevelClient client;
@@ -339,8 +335,8 @@ public class ElasticClient {
     safeSearch = safety;
   }
 
-  public HashMap<String, Double> searchInElasticForNews(String searchText, String index)
-      throws IOException {
+  public HashMap<String, Pair<String, Double>> searchInElasticForNews(
+      String searchText, String index) throws IOException {
     SearchRequest searchRequest = new SearchRequest(index);
     SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
     MultiMatchQueryBuilder multiMatchQueryBuilder =
@@ -352,14 +348,19 @@ public class ElasticClient {
         new FunctionScoreQueryBuilder(
             multiMatchQueryBuilder, exponentialDecayFunction("pubDate", "now", "240m", "30m"));
     searchSourceBuilder.query(functionScoreQueryBuilder);
-    searchSourceBuilder.fetchSource("url", null);
+    String includes[] = new String[2];
+    includes[0] = "url";
+    includes[1] = "pubDate";
+    searchSourceBuilder.fetchSource(includes, null);
     searchRequest.source(searchSourceBuilder);
     SearchResponse searchResponse = client.search(searchRequest);
     SearchHits hits = searchResponse.getHits();
     SearchHit[] searchHits = hits.getHits();
-    HashMap<String, Double> answer = new HashMap<>();
+    HashMap<String, Pair<String, Double>> answer = new HashMap<>();
     for (SearchHit hit : searchHits) {
-      answer.put((String) hit.getSourceAsMap().get("url"), (double) hit.getScore());
+      answer.put(
+          (String) hit.getSourceAsMap().get("url"),
+          new Pair<>((String) hit.getSourceAsMap().get("pubDate"), (double) hit.getScore()));
     }
     return answer;
   }

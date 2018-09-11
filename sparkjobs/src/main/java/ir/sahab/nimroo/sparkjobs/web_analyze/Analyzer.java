@@ -15,17 +15,17 @@ public class Analyzer {
 		domainPageRankLauncher.launchPageRank(40);
 		*/
 
-
+/*
 		KeywordExtractor keywordExtractor = new KeywordExtractor("urlKeyword",
 				"keywords", "finalDomKeyword", "keywords");
 		keywordExtractor.extractKeywords();
+*/
 
 
-		/*
 		KeywordRelationFinder keywordRelationFinder = new KeywordRelationFinder(
-				"domain", "domainGraph", "domKeyword",
+				"domain", "domainGraph", "finalDomKeyword",
 				"keywords", "keywordRelation", "relations");
 		keywordRelationFinder.findKeywordRelation();
-		*/
+
 	}
 }
