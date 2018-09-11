@@ -1,4 +1,4 @@
-package ir.sahab.nimroo.sparkjobs.web_analyze;
+package ir.sahab.nimroo.sparkjobs.webanalyze;
 
 import ir.sahab.nimroo.sparkjobs.HBaseAPI;
 import ir.sahab.nimroo.sparkjobs.pagerank.PageRank;

@@ -1,4 +1,4 @@
-package ir.sahab.nimroo.sparkjobs.web_analyze;
+package ir.sahab.nimroo.sparkjobs.webanalyze;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;

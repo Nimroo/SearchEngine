@@ -1,7 +1,6 @@
-package ir.sahab.nimroo.sparkjobs.web_analyze;
+package ir.sahab.nimroo.sparkjobs.webanalyze;
 
 import ir.sahab.nimroo.util.LinkNormalizer;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -12,8 +11,6 @@ import scala.Tuple2;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.junit.Assert.*;
 
 public class DomainExtractorTest {
 	private static JavaSparkContext javaSparkContext;

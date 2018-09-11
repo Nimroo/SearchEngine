@@ -1,4 +1,4 @@
-package ir.sahab.nimroo.sparkjobs.web_analyze;
+package ir.sahab.nimroo.sparkjobs.webanalyze;
 
 public class Analyzer {
 
