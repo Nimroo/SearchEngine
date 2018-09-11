@@ -108,7 +108,7 @@
 </div>
 
 <div class="collection" id="result" style="width: 50%;">
-    <li v-for="item in res" class="collection-item"><a v-bind:href="Object.keys(item)[0]" class="first-content"><i>{{Object.keys(item)[0]}}</i></a><span class="secondary-content">PageRank: {{item[Object.keys(item)[0]]}}</span></li>
+    <li v-for="item in res" class="collection-item"><a v-bind:href="item['key']" class="first-content"><i>{{item['key']}}</i></a><span class="secondary-content">Date: {{item['value']}}</span></li>
 </div>
 <script src="./app.js"></script>
 
