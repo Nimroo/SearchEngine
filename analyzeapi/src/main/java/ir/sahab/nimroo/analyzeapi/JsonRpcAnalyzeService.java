@@ -1,5 +1,7 @@
 package ir.sahab.nimroo.analyzeapi;
 
+import com.github.arteam.simplejsonrpc.core.annotation.JsonRpcMethod;
+import com.github.arteam.simplejsonrpc.core.annotation.JsonRpcParam;
 import ir.sahab.nimroo.Config;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -18,8 +20,8 @@ import java.util.List;
 
 public class JsonRpcAnalyzeService {
 	private Configuration hBaseConfiguration;
-	private String domainTableString, domainFamilyString;
-	private Table domainTable;
+	private String domainTableString, domainFamilyString, keywordTableString;
+	private Table domainTable, keywordTable;
 	private Connection connection;
 	private Logger logger;
 
@@ -38,7 +40,8 @@ public class JsonRpcAnalyzeService {
 		domainTable = connection.getTable(TableName.valueOf(domainTableString));
 	}
 
-	public List<Pair<String, Integer>> getSinkDomains(String domain) {
+	@JsonRpcMethod
+	public List<Pair<String, Integer>> getSinkDomains(@JsonRpcParam("domain") String domain) {
 		List<Pair<String, Integer>> ans = new LinkedList<>();
 
 		String rowKey = DigestUtils.md5Hex(domain);
