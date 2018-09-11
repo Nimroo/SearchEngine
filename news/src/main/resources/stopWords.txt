@@ -1109,3 +1109,4 @@ download
 menu
 faq
 faqs
+delet
