@@ -24,8 +24,6 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -42,438 +40,432 @@ public class ElasticClient {
   private Logger logger = Logger.getLogger(ElasticClient.class);
   private boolean safeSearch;
 
-  public ElasticClient(String serverAddress) {
-    client =
-        new RestHighLevelClient(
-            RestClient.builder(new HttpHost(serverAddress, 9200, "http"))
-                .setRequestConfigCallback(
-                    requestConfigBuilder ->
-                        requestConfigBuilder.setConnectTimeout(5000).setSocketTimeout(600000))
-                .setMaxRetryTimeoutMillis(600000));
-    request = new BulkRequest();
-    safeSearch = false;
+    public ElasticClient(String serverAddress) {
+        client =
+                new RestHighLevelClient(
+                        RestClient.builder(new HttpHost(serverAddress, 9200, "http"))
+                                .setRequestConfigCallback(
+                                        requestConfigBuilder ->
+                                                requestConfigBuilder.setConnectTimeout(5000).setSocketTimeout(600000))
+                                .setMaxRetryTimeoutMillis(600000));
+        request = new BulkRequest();
+        safeSearch = false;
   }
 
-  public void createIndexForWebPages(String index) throws IOException {
-    GetIndexRequest getIndexRequest = new GetIndexRequest().indices(index);
-    if (client.indices().exists(getIndexRequest)) {
-      return;
-    }
-    CreateIndexRequest createIndexRequest = new CreateIndexRequest(index);
-    XContentBuilder settings = XContentFactory.jsonBuilder();
-    settings.startObject();
-    {
-      settings.startObject("index");
-      {
-        settings.field("number_of_shards", 6);
-        settings.field("number_of_replicas", 1);
-      }
-      settings.endObject();
-    }
-    settings.endObject();
-    XContentBuilder mapping = XContentFactory.jsonBuilder();
-    mapping.startObject();
-    {
-      mapping.startObject("_doc");
-      {
-        mapping.startObject("_source");
+    public void createIndexForWebPages(String index) throws IOException {
+        GetIndexRequest getIndexRequest = new GetIndexRequest().indices(index);
+        if (client.indices().exists(getIndexRequest)) {
+            return;
+        }
+        CreateIndexRequest createIndexRequest = new CreateIndexRequest(index);
+        XContentBuilder settings = XContentFactory.jsonBuilder();
+        settings.startObject();
         {
-          mapping.field("enabled", "true");
+            settings.startObject("index");
+            {
+                settings.field("number_of_shards", 6);
+                settings.field("number_of_replicas", 1);
+            }
+            settings.endObject();
+        }
+        settings.endObject();
+        XContentBuilder mapping = XContentFactory.jsonBuilder();
+        mapping.startObject();
+        {
+            mapping.startObject("_doc");
+            {
+                mapping.startObject("_source");
+                {
+                    mapping.field("enabled", "true");
+                }
+                mapping.endObject();
+                mapping.startObject("properties");
+                {
+                    mapping.startObject("title");
+                    {
+                        mapping.field("type", "text");
+                        mapping.field("analyzer", "english");
+                        mapping.field("search_analyzer", "english");
+                        mapping.field("term_vector", "yes");
+                    }
+                    mapping.endObject();
+                    mapping.startObject("text");
+                    {
+                        mapping.field("type", "text");
+                        mapping.field("analyzer", "english");
+                        mapping.field("search_analyzer", "english");
+                        mapping.field("term_vector", "yes");
+                    }
+                    mapping.endObject();
+                    mapping.startObject("description");
+                    {
+                        mapping.field("type", "text");
+                        mapping.field("analyzer", "english");
+                        mapping.field("search_analyzer", "english");
+                        mapping.field("term_vector", "yes");
+                    }
+                    mapping.endObject();
+                    mapping.startObject("keywords");
+                    {
+                        mapping.field("type", "text");
+                        mapping.field("analyzer", "english");
+                        mapping.field("search_analyzer", "english");
+                        mapping.field("term_vector", "yes");
+                    }
+                    mapping.endObject();
+                    mapping.startObject("h1");
+                    {
+                        mapping.field("type", "text");
+                        mapping.field("analyzer", "english");
+                        mapping.field("search_analyzer", "english");
+                        mapping.field("term_vector", "yes");
+                    }
+                    mapping.endObject();
+                    mapping.startObject("h2");
+                    {
+                        mapping.field("type", "text");
+                        mapping.field("analyzer", "english");
+                        mapping.field("search_analyzer", "english");
+                        mapping.field("term_vector", "yes");
+                    }
+                    mapping.endObject();
+                    mapping.startObject("anchors");
+                    {
+                        mapping.field("type", "text");
+                        mapping.field("analyzer", "english");
+                        mapping.field("search_analyzer", "english");
+                        mapping.field("term_vector", "yes");
+                    }
+                    mapping.endObject();
+                }
+                mapping.endObject();
+            }
+            mapping.endObject();
         }
         mapping.endObject();
-        mapping.startObject("properties");
+        createIndexRequest.mapping("_doc", mapping).settings(settings);
+        client.indices().create(createIndexRequest);
+    }
+
+    public void createIndexForNews(String index) throws IOException {
+        GetIndexRequest getIndexRequest = new GetIndexRequest().indices(index);
+        if (client.indices().exists(getIndexRequest)) {
+            return;
+        }
+        CreateIndexRequest createIndexRequest = new CreateIndexRequest(index);
+        XContentBuilder settings = XContentFactory.jsonBuilder();
+        settings.startObject();
         {
-          mapping.startObject("title");
-          {
-            mapping.field("type", "text");
-            mapping.field("analyzer", "english");
-            mapping.field("search_analyzer", "english");
-            mapping.field("term_vector", "yes");
-          }
-          mapping.endObject();
-          mapping.startObject("text");
-          {
-            mapping.field("type", "text");
-            mapping.field("analyzer", "english");
-            mapping.field("search_analyzer", "english");
-            mapping.field("term_vector", "yes");
-          }
-          mapping.endObject();
-          mapping.startObject("description");
-          {
-            mapping.field("type", "text");
-            mapping.field("analyzer", "english");
-            mapping.field("search_analyzer", "english");
-            mapping.field("term_vector", "yes");
-          }
-          mapping.endObject();
-          mapping.startObject("keywords");
-          {
-            mapping.field("type", "text");
-            mapping.field("analyzer", "english");
-            mapping.field("search_analyzer", "english");
-            mapping.field("term_vector", "yes");
-          }
-          mapping.endObject();
-          mapping.startObject("h1");
-          {
-            mapping.field("type", "text");
-            mapping.field("analyzer", "english");
-            mapping.field("search_analyzer", "english");
-            mapping.field("term_vector", "yes");
-          }
-          mapping.endObject();
-          mapping.startObject("h2");
-          {
-            mapping.field("type", "text");
-            mapping.field("analyzer", "english");
-            mapping.field("search_analyzer", "english");
-            mapping.field("term_vector", "yes");
-          }
-          mapping.endObject();
-          mapping.startObject("anchors");
-          {
-            mapping.field("type", "text");
-            mapping.field("analyzer", "english");
-            mapping.field("search_analyzer", "english");
-            mapping.field("term_vector", "yes");
-          }
-          mapping.endObject();
+            settings.startObject("index");
+            {
+                settings.field("number_of_shards", 6);
+                settings.field("number_of_replicas", 1);
+            }
+            settings.endObject();
+        }
+        settings.endObject();
+        XContentBuilder mapping = XContentFactory.jsonBuilder();
+        mapping.startObject();
+        {
+            mapping.startObject("_doc");
+            {
+                mapping.startObject("_source");
+                {
+                    mapping.field("enabled", "true");
+                }
+                mapping.endObject();
+                mapping.startObject("properties");
+                {
+                    mapping.startObject("title");
+                    {
+                        mapping.field("type", "text");
+                        mapping.field("analyzer", "english");
+                        mapping.field("search_analyzer", "english");
+                        mapping.field("term_vector", "yes");
+                    }
+                    mapping.endObject();
+                    mapping.startObject("text");
+                    {
+                        mapping.field("type", "text");
+                        mapping.field("analyzer", "english");
+                        mapping.field("search_analyzer", "english");
+                        mapping.field("term_vector", "yes");
+                    }
+                    mapping.endObject();
+                    mapping.startObject("pubDate");
+                    {
+                        mapping.field("type", "date");
+                    }
+                    mapping.endObject();
+                }
+                mapping.endObject();
+            }
+            mapping.endObject();
         }
         mapping.endObject();
-      }
-      mapping.endObject();
+        createIndexRequest.mapping("_doc", mapping).settings(settings);
+        client.indices().create(createIndexRequest);
     }
-    mapping.endObject();
-    createIndexRequest.mapping("_doc", mapping).settings(settings);
-    client.indices().create(createIndexRequest);
-  }
 
-  public void createIndexForNews(String index) throws IOException {
-    GetIndexRequest getIndexRequest = new GetIndexRequest().indices(index);
-    if (client.indices().exists(getIndexRequest)) {
-      return;
-    }
-    CreateIndexRequest createIndexRequest = new CreateIndexRequest(index);
-    XContentBuilder settings = XContentFactory.jsonBuilder();
-    settings.startObject();
-    {
-      settings.startObject("index");
-      {
-        settings.field("number_of_shards", 6);
-        settings.field("number_of_replicas", 1);
-      }
-      settings.endObject();
-    }
-    settings.endObject();
-    XContentBuilder mapping = XContentFactory.jsonBuilder();
-    mapping.startObject();
-    {
-      mapping.startObject("_doc");
-      {
-        mapping.startObject("_source");
-        {
-          mapping.field("enabled", "true");
+    public synchronized void addWebPageToBulkOfElastic(PageData pageData, String id, String index)
+            throws IOException {
+        String url = pageData.getUrl();
+        String title = pageData.getTitle();
+        String text = pageData.getText();
+        String h1 = pageData.getH1();
+        StringBuilder h2 = new StringBuilder();
+        ArrayList<String> h2List = pageData.getH2();
+        if (h2List != null) {
+            for (String tempH2List : h2List) {
+                h2.append(" ").append(tempH2List);
+            }
         }
-        mapping.endObject();
-        mapping.startObject("properties");
-        {
-          mapping.startObject("title");
-          {
-            mapping.field("type", "text");
-            mapping.field("analyzer", "english");
-            mapping.field("search_analyzer", "english");
-            mapping.field("term_vector", "yes");
-          }
-          mapping.endObject();
-          mapping.startObject("text");
-          {
-            mapping.field("type", "text");
-            mapping.field("analyzer", "english");
-            mapping.field("search_analyzer", "english");
-            mapping.field("term_vector", "yes");
-          }
-          mapping.endObject();
-          mapping.startObject("pubDate");
-          {
-            mapping.field("type", "date");
-          }
-          mapping.endObject();
+        String description = null;
+        String keywords = null;
+        if (pageData.getMetas() != null) {
+            for (Meta temp : pageData.getMetas()) {
+                if (temp.getName().equals("description")) {
+                    description = temp.getContent();
+                } else if (temp.getName().equals("keywords")) {
+                    keywords = temp.getContent();
+                }
+            }
         }
-        mapping.endObject();
-      }
-      mapping.endObject();
+        XContentBuilder builder =
+                jsonBuilder()
+                        .startObject()
+                        .field("url", url)
+                        .field("title", title)
+                        .field("text", text)
+                        .field("description", description)
+                        .field("keywords", keywords)
+                        .field("h1", h1)
+                        .field("h2", h2.toString())
+                        .field("anchors", "")
+                        .endObject();
+        request.add(new IndexRequest(index, "_doc", id).source(builder));
     }
-    mapping.endObject();
-    createIndexRequest.mapping("_doc", mapping).settings(settings);
-    client.indices().create(createIndexRequest);
-  }
 
-  public synchronized void addWebPageToBulkOfElastic(PageData pageData, String id, String index)
-      throws IOException {
-    String url = pageData.getUrl();
-    String title = pageData.getTitle();
-    String text = pageData.getText();
-    String h1 = pageData.getH1();
-    StringBuilder h2 = new StringBuilder();
-    ArrayList<String> h2List = pageData.getH2();
-    if (h2List != null) {
-      for (String tempH2List : h2List) {
-        h2.append(" ").append(tempH2List);
-      }
+    public synchronized void addNewsToBulkOfElastic(
+            String url, String title, String text, String pubDate, String id, String index)
+            throws IOException {
+        XContentBuilder builder =
+                jsonBuilder()
+                        .startObject()
+                        .field("url", url)
+                        .field("title", title)
+                        .field("text", text)
+                        .field("pubDate", pubDate)
+                        .endObject();
+        request.add(new IndexRequest(index, "_doc", id).source(builder));
     }
-    String description = null;
-    String keywords = null;
-    if (pageData.getMetas() != null) {
-      for (Meta temp : pageData.getMetas()) {
-        if (temp.getName().equals("description")) {
-          description = temp.getContent();
-        } else if (temp.getName().equals("keywords")) {
-          keywords = temp.getContent();
+
+    public synchronized void addWebPageUpdateToBulk(PageData pageData, String id, String index)
+            throws IOException {
+        String url = pageData.getUrl();
+        String title = pageData.getTitle();
+        String text = pageData.getText();
+        String h1 = pageData.getH1();
+        StringBuilder h2 = new StringBuilder();
+        ArrayList<String> h2List = pageData.getH2();
+        if (h2List != null) {
+            for (String tempH2List : h2List) {
+                h2.append(" ").append(tempH2List);
+            }
         }
-      }
-    }
-    XContentBuilder builder =
-        jsonBuilder()
-            .startObject()
-            .field("url", url)
-            .field("title", title)
-            .field("text", text)
-            .field("description", description)
-            .field("keywords", keywords)
-            .field("h1", h1)
-            .field("h2", h2.toString())
-            .field("anchors", "")
-            .endObject();
-    request.add(new IndexRequest(index, "_doc", id).source(builder));
-  }
-
-  public synchronized void addNewsToBulkOfElastic(
-      String url, String title, String text, String pubDate, String id, String index)
-      throws IOException {
-    XContentBuilder builder =
-        jsonBuilder()
-            .startObject()
-            .field("url", url)
-            .field("title", title)
-            .field("text", text)
-            .field("pubDate", pubDate)
-            .endObject();
-    request.add(new IndexRequest(index, "_doc", id).source(builder));
-  }
-
-  public synchronized void addWebPageUpdateToBulk(PageData pageData, String id, String index)
-      throws IOException {
-    String url = pageData.getUrl();
-    String title = pageData.getTitle();
-    String text = pageData.getText();
-    String h1 = pageData.getH1();
-    StringBuilder h2 = new StringBuilder();
-    ArrayList<String> h2List = pageData.getH2();
-    if (h2List != null) {
-      for (String tempH2List : h2List) {
-        h2.append(" ").append(tempH2List);
-      }
-    }
-    String description = null;
-    String keywords = null;
-    if (pageData.getMetas() != null) {
-      for (Meta temp : pageData.getMetas()) {
-        if (temp.getName().equals("description") && temp.getContent() != null) {
-          description = temp.getContent();
-        } else if (temp.getName().equals("keywords") && temp.getContent() != null) {
-          keywords = temp.getContent();
+        String description = null;
+        String keywords = null;
+        if (pageData.getMetas() != null) {
+            for (Meta temp : pageData.getMetas()) {
+                if (temp.getName().equals("description") && temp.getContent() != null) {
+                    description = temp.getContent();
+                } else if (temp.getName().equals("keywords") && temp.getContent() != null) {
+                    keywords = temp.getContent();
+                }
+            }
         }
-      }
+        XContentBuilder builder =
+                jsonBuilder()
+                        .startObject()
+                        .field("url", url)
+                        .field("title", title)
+                        .field("text", text)
+                        .field("description", description)
+                        .field("keywords", keywords)
+                        .field("h1", h1)
+                        .field("h2", h2.toString())
+                        .endObject();
+        request.add(new UpdateRequest(index, "_doc", id).doc(builder));
     }
-    XContentBuilder builder =
-        jsonBuilder()
-            .startObject()
-            .field("url", url)
-            .field("title", title)
-            .field("text", text)
-            .field("description", description)
-            .field("keywords", keywords)
-            .field("h1", h1)
-            .field("h2", h2.toString())
-            .endObject();
-    request.add(new UpdateRequest(index, "_doc", id).doc(builder));
-  }
 
-  public synchronized void addAnchorUpdateToBulk(String anchors, String id, String index)
-      throws IOException {
-    XContentBuilder builder = jsonBuilder().startObject().field("anchors", anchors).endObject();
-    request.add(new UpdateRequest(index, "_doc", id).doc(builder));
-  }
+    public synchronized void addAnchorUpdateToBulk(String anchors, String id, String index)
+            throws IOException {
+        XContentBuilder builder = jsonBuilder().startObject().field("anchors", anchors).endObject();
+        request.add(new UpdateRequest(index, "_doc", id).doc(builder));
+    }
 
-  public synchronized void addBulkToElastic() throws IOException {
-    if (request.numberOfActions() > 0) {
-      client.bulk(request);
-      request = new BulkRequest();
+    public synchronized void addBulkToElastic() throws IOException {
+        if (request.numberOfActions() > 0) {
+            client.bulk(request);
+            request = new BulkRequest();
+        }
     }
-  }
 
-  public void readObsceneWordsForSearch() throws URISyntaxException {
-    obsceneWords = new ArrayList<>();
-    File file = new File(getClass().getClassLoader().getResource("obscene words").toURI());
-    Scanner sc = null;
-    try {
-      sc = new Scanner(file);
-    } catch (FileNotFoundException e) {
-      logger.error("obscene words file not found", e);
+    public void readObsceneWordsForSearch() throws URISyntaxException {
+        obsceneWords = new ArrayList<>();
+        Scanner sc = new Scanner(getClass().getClassLoader().getResourceAsStream("obscene words"));
+        while (sc.hasNextLine()) {
+            obsceneWords.add(sc.nextLine());
+        }
     }
-    while (sc.hasNextLine()) {
-      obsceneWords.add(sc.nextLine());
-    }
-  }
 
-  public boolean getSafeSearch() {
-    return safeSearch;
-  }
+    public boolean getSafeSearch() {
+        return safeSearch;
+    }
 
-  public void setSafeSearch(boolean safety) {
-    safeSearch = safety;
-  }
+    public void setSafeSearch(boolean safety) {
+        safeSearch = safety;
+    }
 
-  public HashMap<String, Pair<String, Double>> searchInElasticForNews(
-      String searchText, String index) throws IOException {
-    SearchRequest searchRequest = new SearchRequest(index);
-    SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-    MultiMatchQueryBuilder multiMatchQueryBuilder =
-        QueryBuilders.multiMatchQuery(searchText, "text", "title");
-    multiMatchQueryBuilder.field("text", 2);
-    multiMatchQueryBuilder.field("title", 1);
+    public HashMap<String, Pair<String, Double>> searchInElasticForNews(
+            String searchText, String index) throws IOException {
+        SearchRequest searchRequest = new SearchRequest(index);
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        MultiMatchQueryBuilder multiMatchQueryBuilder =
+                QueryBuilders.multiMatchQuery(searchText, "text", "title");
+        multiMatchQueryBuilder.field("text", 2);
+        multiMatchQueryBuilder.field("title", 1);
 
-    FunctionScoreQueryBuilder functionScoreQueryBuilder =
-        new FunctionScoreQueryBuilder(
-            multiMatchQueryBuilder, exponentialDecayFunction("pubDate", "now", "240m", "30m"));
-    searchSourceBuilder.query(functionScoreQueryBuilder);
-    String includes[] = new String[2];
-    includes[0] = "url";
-    includes[1] = "pubDate";
-    searchSourceBuilder.fetchSource(includes, null);
-    searchRequest.source(searchSourceBuilder);
-    SearchResponse searchResponse = client.search(searchRequest);
-    SearchHits hits = searchResponse.getHits();
-    SearchHit[] searchHits = hits.getHits();
-    HashMap<String, Pair<String, Double>> answer = new HashMap<>();
-    for (SearchHit hit : searchHits) {
-      answer.put(
-          (String) hit.getSourceAsMap().get("url"),
-          new Pair<>((String) hit.getSourceAsMap().get("pubDate"), (double) hit.getScore()));
+        FunctionScoreQueryBuilder functionScoreQueryBuilder =
+                new FunctionScoreQueryBuilder(
+                        multiMatchQueryBuilder, exponentialDecayFunction("pubDate", "now", "240m", "30m"));
+        searchSourceBuilder.query(functionScoreQueryBuilder);
+        String includes[] = new String[2];
+        includes[0] = "url";
+        includes[1] = "pubDate";
+        searchSourceBuilder.fetchSource(includes, null);
+        searchRequest.source(searchSourceBuilder);
+        SearchResponse searchResponse = client.search(searchRequest);
+        SearchHits hits = searchResponse.getHits();
+        SearchHit[] searchHits = hits.getHits();
+        HashMap<String, Pair<String, Double>> answer = new HashMap<>();
+        for (SearchHit hit : searchHits) {
+            answer.put(
+                    (String) hit.getSourceAsMap().get("url"),
+                    new Pair<>((String) hit.getSourceAsMap().get("pubDate"), (double) hit.getScore()));
+        }
+        return answer;
     }
-    return answer;
-  }
 
-  public HashMap<String, Double> simpleSearchInElasticForWebPage(
-      String searchText, String index, boolean pageRank) throws IOException {
-    SearchRequest searchRequest = new SearchRequest(index);
-    SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-    BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
-    if (safeSearch) {
-      for (String phrase : obsceneWords) {
-        boolQuery.mustNot(
-            QueryBuilders.multiMatchQuery(
-                    phrase, "text", "title", "description", "keywords", "h1", "h2", "anchors")
-                .type(MultiMatchQueryBuilder.Type.PHRASE));
-      }
+    public HashMap<String, Double> simpleSearchInElasticForWebPage(
+            String searchText, String index, boolean pageRank) throws IOException {
+        SearchRequest searchRequest = new SearchRequest(index);
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+        if (safeSearch) {
+            for (String phrase : obsceneWords) {
+                boolQuery.mustNot(
+                        QueryBuilders.multiMatchQuery(
+                                phrase, "text", "title", "description", "keywords", "h1", "h2", "anchors")
+                                .type(MultiMatchQueryBuilder.Type.PHRASE));
+            }
+        }
+        MultiMatchQueryBuilder multiMatchQueryBuilder =
+                QueryBuilders.multiMatchQuery(
+                        searchText, "text", "title", "description", "keywords", "h1", "h2", "anchors");
+        multiMatchQueryBuilder.field("text", 5);
+        multiMatchQueryBuilder.field("title", 2);
+        multiMatchQueryBuilder.field("description", 1);
+        multiMatchQueryBuilder.field("keywords", 1);
+        multiMatchQueryBuilder.field("h1", 3);
+        multiMatchQueryBuilder.field("h2", 2);
+        multiMatchQueryBuilder.field("anchors", 2);
+        boolQuery.must(multiMatchQueryBuilder);
+        searchSourceBuilder.query(boolQuery);
+        if (pageRank) {
+            searchSourceBuilder.size(1000);
+        }
+        searchSourceBuilder.fetchSource("url", null);
+        searchRequest.source(searchSourceBuilder);
+        SearchResponse searchResponse = client.search(searchRequest);
+        SearchHits hits = searchResponse.getHits();
+        SearchHit[] searchHits = hits.getHits();
+        HashMap<String, Double> answer = new HashMap<>();
+        for (SearchHit hit : searchHits) {
+            answer.put((String) hit.getSourceAsMap().get("url"), (double) hit.getScore());
+        }
+        return answer;
     }
-    MultiMatchQueryBuilder multiMatchQueryBuilder =
-        QueryBuilders.multiMatchQuery(
-            searchText, "text", "title", "description", "keywords", "h1", "h2", "anchors");
-    multiMatchQueryBuilder.field("text", 5);
-    multiMatchQueryBuilder.field("title", 2);
-    multiMatchQueryBuilder.field("description", 1);
-    multiMatchQueryBuilder.field("keywords", 1);
-    multiMatchQueryBuilder.field("h1", 3);
-    multiMatchQueryBuilder.field("h2", 2);
-    multiMatchQueryBuilder.field("anchors", 2);
-    boolQuery.must(multiMatchQueryBuilder);
-    searchSourceBuilder.query(boolQuery);
-    if (pageRank) {
-      searchSourceBuilder.size(1000);
-    }
-    searchSourceBuilder.fetchSource("url", null);
-    searchRequest.source(searchSourceBuilder);
-    SearchResponse searchResponse = client.search(searchRequest);
-    SearchHits hits = searchResponse.getHits();
-    SearchHit[] searchHits = hits.getHits();
-    HashMap<String, Double> answer = new HashMap<>();
-    for (SearchHit hit : searchHits) {
-      answer.put((String) hit.getSourceAsMap().get("url"), (double) hit.getScore());
-    }
-    return answer;
-  }
 
-  public HashMap<String, Double> advancedSearchInElasticForWebPage(
-      ArrayList<String> mustFind,
-      ArrayList<String> mustNotFind,
-      ArrayList<String> shouldFind,
-      String index,
-      boolean pageRank)
-      throws IOException {
-    SearchRequest searchRequest = new SearchRequest(index);
-    SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-    BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
-    if (safeSearch) {
-      for (String phrase : obsceneWords) {
-        boolQuery.mustNot(
-            QueryBuilders.multiMatchQuery(
-                    phrase, "text", "title", "description", "keywords", "h1", "h2", "anchors")
-                .type(MultiMatchQueryBuilder.Type.PHRASE));
-      }
+    public HashMap<String, Double> advancedSearchInElasticForWebPage(
+            ArrayList<String> mustFind,
+            ArrayList<String> mustNotFind,
+            ArrayList<String> shouldFind,
+            String index,
+            boolean pageRank)
+            throws IOException {
+        SearchRequest searchRequest = new SearchRequest(index);
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+        if (safeSearch) {
+            for (String phrase : obsceneWords) {
+                boolQuery.mustNot(
+                        QueryBuilders.multiMatchQuery(
+                                phrase, "text", "title", "description", "keywords", "h1", "h2", "anchors")
+                                .type(MultiMatchQueryBuilder.Type.PHRASE));
+            }
+        }
+        for (String phrase : mustFind) {
+            MultiMatchQueryBuilder multiMatchQueryBuilder =
+                    QueryBuilders.multiMatchQuery(
+                            phrase, "text", "title", "description", "keywords", "h1", "h2", "anchors")
+                            .type(MultiMatchQueryBuilder.Type.PHRASE);
+            multiMatchQueryBuilder.field("text", 5);
+            multiMatchQueryBuilder.field("title", 2);
+            multiMatchQueryBuilder.field("description", 1);
+            multiMatchQueryBuilder.field("keywords", 1);
+            multiMatchQueryBuilder.field("h1", 3);
+            multiMatchQueryBuilder.field("h2", 2);
+            multiMatchQueryBuilder.field("anchors", 2);
+            boolQuery.must(multiMatchQueryBuilder);
+        }
+        for (String phrase : mustNotFind) {
+            boolQuery.mustNot(
+                    QueryBuilders.multiMatchQuery(
+                            phrase, "text", "title", "description", "keywords", "h1", "h2", "anchors")
+                            .type(MultiMatchQueryBuilder.Type.PHRASE));
+        }
+        for (String phrase : shouldFind) {
+            MultiMatchQueryBuilder multiMatchQueryBuilder =
+                    QueryBuilders.multiMatchQuery(
+                            phrase, "text", "title", "description", "keywords", "h1", "h2", "anchors")
+                            .type(MultiMatchQueryBuilder.Type.PHRASE);
+            multiMatchQueryBuilder.field("text", 5);
+            multiMatchQueryBuilder.field("title", 2);
+            multiMatchQueryBuilder.field("description", 1);
+            multiMatchQueryBuilder.field("keywords", 1);
+            multiMatchQueryBuilder.field("h1", 3);
+            multiMatchQueryBuilder.field("h2", 2);
+            multiMatchQueryBuilder.field("anchors", 2);
+            boolQuery.should(multiMatchQueryBuilder);
+        }
+        searchSourceBuilder.query(boolQuery);
+        if (pageRank) {
+            searchSourceBuilder.size(1000);
+        }
+        searchSourceBuilder.fetchSource("url", null);
+        searchRequest.source(searchSourceBuilder);
+        SearchResponse searchResponse = client.search(searchRequest);
+        SearchHits hits = searchResponse.getHits();
+        SearchHit[] searchHits = hits.getHits();
+        HashMap<String, Double> answer = new HashMap<>();
+        for (SearchHit hit : searchHits) {
+            answer.put((String) hit.getSourceAsMap().get("url"), (double) hit.getScore());
+        }
+        return answer;
     }
-    for (String phrase : mustFind) {
-      MultiMatchQueryBuilder multiMatchQueryBuilder =
-          QueryBuilders.multiMatchQuery(
-                  phrase, "text", "title", "description", "keywords", "h1", "h2", "anchors")
-              .type(MultiMatchQueryBuilder.Type.PHRASE);
-      multiMatchQueryBuilder.field("text", 5);
-      multiMatchQueryBuilder.field("title", 2);
-      multiMatchQueryBuilder.field("description", 1);
-      multiMatchQueryBuilder.field("keywords", 1);
-      multiMatchQueryBuilder.field("h1", 3);
-      multiMatchQueryBuilder.field("h2", 2);
-      multiMatchQueryBuilder.field("anchors", 2);
-      boolQuery.must(multiMatchQueryBuilder);
-    }
-    for (String phrase : mustNotFind) {
-      boolQuery.mustNot(
-          QueryBuilders.multiMatchQuery(
-                  phrase, "text", "title", "description", "keywords", "h1", "h2", "anchors")
-              .type(MultiMatchQueryBuilder.Type.PHRASE));
-    }
-    for (String phrase : shouldFind) {
-      MultiMatchQueryBuilder multiMatchQueryBuilder =
-          QueryBuilders.multiMatchQuery(
-                  phrase, "text", "title", "description", "keywords", "h1", "h2", "anchors")
-              .type(MultiMatchQueryBuilder.Type.PHRASE);
-      multiMatchQueryBuilder.field("text", 5);
-      multiMatchQueryBuilder.field("title", 2);
-      multiMatchQueryBuilder.field("description", 1);
-      multiMatchQueryBuilder.field("keywords", 1);
-      multiMatchQueryBuilder.field("h1", 3);
-      multiMatchQueryBuilder.field("h2", 2);
-      multiMatchQueryBuilder.field("anchors", 2);
-      boolQuery.should(multiMatchQueryBuilder);
-    }
-    searchSourceBuilder.query(boolQuery);
-    if (pageRank) {
-      searchSourceBuilder.size(1000);
-    }
-    searchSourceBuilder.fetchSource("url", null);
-    searchRequest.source(searchSourceBuilder);
-    SearchResponse searchResponse = client.search(searchRequest);
-    SearchHits hits = searchResponse.getHits();
-    SearchHit[] searchHits = hits.getHits();
-    HashMap<String, Double> answer = new HashMap<>();
-    for (SearchHit hit : searchHits) {
-      answer.put((String) hit.getSourceAsMap().get("url"), (double) hit.getScore());
-    }
-    return answer;
-  }
 
-  public void closeClient() throws IOException {
-    client.close();
-  }
+    public void closeClient() throws IOException {
+        client.close();
+    }
 }
