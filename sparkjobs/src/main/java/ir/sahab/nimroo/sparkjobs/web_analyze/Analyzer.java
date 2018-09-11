@@ -27,5 +27,10 @@ public class Analyzer {
 				"keywords", "keywordRelation", "relations");
 		keywordRelationFinder.findKeywordRelation();
 
+/*
+		DomainReverser domainReverser = new DomainReverser("domain", "domainGraph", "reverseDomain",
+				"domainGraph");
+		domainReverser.reverseDomains();
+*/
 	}
 }
