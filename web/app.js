@@ -5,11 +5,11 @@ var search = new Vue({
 		message: 'Hello Vue!'
 	}
 });
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
 	var elems = document.querySelectorAll('.collapsible');
 	var instances = M.Collapsible.init(elems, {}/*options*/);
 
-	jQuery.post(address, JSON.stringify({method:"keywords", params:{}, jsonrpc:"2.0", id:Date.now()}), item=> {
+	jQuery.post(address, JSON.stringify({method: "keywords", params: {}, jsonrpc: "2.0", id: Date.now()}), item => {
 		keywords.keywords = JSON.parse(item).result;
 	});
 });
@@ -19,8 +19,7 @@ var newsSearch = new Vue({
 	data: {
 		text: "",
 	},
-	methods: {
-	}
+	methods: {}
 });
 
 var normalSearch = new Vue({
@@ -28,44 +27,48 @@ var normalSearch = new Vue({
 	data: {
 		text: "",
 	},
-	methods: {
-	}
+	methods: {}
 });
 
 var result = new Vue({
 	el: '#result',
-	data: {res:[]},
-	methods: {
-	}
+	data: {res: []},
+	methods: {}
 });
 
 var keywords = new Vue({
 	el: '#keywords',
-	data: {keywords:[]},
+	data: {keywords: []},
 	methods: {
+		searchNews: function (query) {
+			method = "newsSearch";
+			jQuery.post(address, JSON.stringify({method, params: {query}, jsonrpc: "2.0", id: Date.now()}), item => {
+				result.res = JSON.parse(item).result;
+			});
+		}
+
 	}
 });
 
 var advanceSearch = new Vue({
 	el: '#advance_search',
 	data: {
-		must: [{value:""}],
-		must_not: [{value:""}],
-		should: [{value:""}],
+		must: [{value: ""}],
+		must_not: [{value: ""}],
+		should: [{value: ""}],
 	},
 	methods: {
 		add_must: function () {
 			this.must.push({value: ""});
 		},
 		add_must_not: function () {
-			this.must_not.push({value:""});
+			this.must_not.push({value: ""});
 		},
 		add_should: function () {
-			this.should.push({value:""});
+			this.should.push({value: ""});
 		}
 	}
 });
-
 
 
 var search_button = new Vue({
@@ -81,7 +84,7 @@ var search_button = new Vue({
 					must: advanceSearch.must.map(item => item.value),
 					must_not: advanceSearch.must_not.map(item => item.value),
 					should: advanceSearch.should.map(item => item.value),
-					safety,pageRank
+					safety, pageRank
 				};
 				method = "advanceSearch";
 			}
@@ -89,7 +92,7 @@ var search_button = new Vue({
 
 				params = {
 					text: normalSearch.text,
-					safety,pageRank
+					safety, pageRank
 				};
 				method = "normalSearch";
 			}
@@ -101,7 +104,7 @@ var search_button = new Vue({
 			}
 
 			console.log(method, params);
-			jQuery.post(address, JSON.stringify({method, params, jsonrpc:"2.0", id:Date.now()}), item=> {
+			jQuery.post(address, JSON.stringify({method, params, jsonrpc: "2.0", id: Date.now()}), item => {
 				result.res = JSON.parse(item).result;
 			});
 		}

@@ -108,7 +108,7 @@
 </div>
 
 <div class="collection" id="keywords" style="width: 50%;">
-    <button v-for="item in keywords" class="waves-effect waves-teal btn-flat" type="button">{{item}}</button>
+    <button v-on:click="searchNews(item['key'])" v-for="item in keywords" class="waves-effect waves-teal btn-flat" type="button">{{item['key']}}</button>
 </div>
 
 <div class="collection" id="result" style="width: 50%;">
