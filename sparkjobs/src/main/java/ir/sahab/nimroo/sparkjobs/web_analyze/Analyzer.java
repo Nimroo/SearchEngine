@@ -24,5 +24,6 @@ public class Analyzer {
 		KeywordRelationFinder keywordRelationFinder = new KeywordRelationFinder(
 				"domain", "domainGraph", "domKeyword",
 				"keywords", "keywordRelation", "relations");
+		keywordRelationFinder.findKeywordRelation();
 	}
 }
