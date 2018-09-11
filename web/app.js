@@ -9,6 +9,15 @@ document.addEventListener('DOMContentLoaded', function() {
 	var instances = M.Collapsible.init(elems, {}/*options*/);
 });
 
+var newsSearch = new Vue({
+	el: '#news_search',
+	data: {
+		text: "",
+	},
+	methods: {
+	}
+});
+
 var normalSearch = new Vue({
 	el: '#normal_search',
 	data: {
@@ -64,15 +73,23 @@ var search_button = new Vue({
 				};
 				method = "advanceSearch";
 			}
-			else {
+			else if (document.getElementsByClassName("active").item(0).getAttribute('id') === 'normal_search') {
+
 				params = {
 					text: normalSearch.text,
 					safety,pageRank
 				};
 				method = "normalSearch";
 			}
+			else if (document.getElementsByClassName("active").item(0).getAttribute('id') === 'news_search') {
+				params = {
+					query: newsSearch.text
+				};
+				method = "newsSearch";
+			}
+
 			console.log(method, params);
-			jQuery.post("http://94.23.203.156:6060",JSON.stringify({method, params, jsonrpc:"2.0", id:Date.now()}), item=> {
+			jQuery.post("http://127.0.0.1:6060",JSON.stringify({method, params, jsonrpc:"2.0", id:Date.now()}), item=> {
 				result.res = JSON.parse(item).result;
 			});
 		}
