@@ -1,6 +1,5 @@
 package ir.sahab.nimroo.elasticsearch;
 
-import ir.sahab.nimroo.Config;
 import ir.sahab.nimroo.model.Meta;
 import ir.sahab.nimroo.model.PageData;
 import javafx.util.Pair;
@@ -15,7 +14,6 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.common.lucene.search.function.FunctionScoreQuery;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -35,10 +33,7 @@ import java.util.HashMap;
 import java.util.Scanner;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
-import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
-import static org.elasticsearch.index.query.QueryBuilders.spanOrQuery;
 import static org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders.exponentialDecayFunction;
-import static org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders.randomFunction;
 
 public class ElasticClient {
   private RestHighLevelClient client;

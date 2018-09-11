@@ -1,5 +1,6 @@
 package ir.sahab.nimroo.elasticsearch;
 
+import ir.sahab.nimroo.Config;
 import ir.sahab.nimroo.hbase.CrawlerRepository;
 import javafx.util.Pair;
 
@@ -12,7 +13,7 @@ public class SearchUIConnector {
   private ElasticClient elasticClient;
 
   public SearchUIConnector() throws URISyntaxException {
-    elasticClient = new ElasticClient("46.4.99.108");
+    elasticClient = new ElasticClient(Config.server2Address);
     elasticClient.readObsceneWordsForSearch();
   }
 
