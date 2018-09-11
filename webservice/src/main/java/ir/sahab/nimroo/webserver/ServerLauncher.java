@@ -1,7 +1,7 @@
-package ir.sahab.nimroo.searchapi;
+package ir.sahab.nimroo.webserver;
 
-import ir.sahab.nimroo.elasticsearch.SearchUIConnector;
 import ir.sahab.nimroo.Config;
+import ir.sahab.nimroo.elasticsearch.SearchUIConnector;
 import org.apache.log4j.PropertyConfigurator;
 import org.eclipse.jetty.server.Server;
 
@@ -13,8 +13,11 @@ public class ServerLauncher {
 
         Server server = new Server(6060);
         SearchUIConnector searchUIConnector = new SearchUIConnector();
-        JsonRpcSearchService jsonRpcSearchService = new JsonRpcSearchService(searchUIConnector);
-        server.setHandler(new HttpRequestHandler(jsonRpcSearchService));
+        NimrooJsonRpcService jsonRpcSearchService = new NimrooJsonRpcService(searchUIConnector);
+
+        HttpRequestHandler reqHandler = new HttpRequestHandler(jsonRpcSearchService);
+
+        server.setHandler(reqHandler);
 
         server.start();
         server.join();

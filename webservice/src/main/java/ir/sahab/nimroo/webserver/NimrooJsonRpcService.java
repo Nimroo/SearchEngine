@@ -1,28 +1,39 @@
-package ir.sahab.nimroo.searchapi;
+package ir.sahab.nimroo.webserver;
 
 import com.github.arteam.simplejsonrpc.core.annotation.JsonRpcMethod;
 import com.github.arteam.simplejsonrpc.core.annotation.JsonRpcParam;
 import com.github.arteam.simplejsonrpc.core.annotation.JsonRpcService;
 import ir.sahab.nimroo.Config;
 import ir.sahab.nimroo.elasticsearch.SearchUIConnector;
+import ir.sahab.nimroo.hbase.DomainRepository;
+import ir.sahab.nimroo.hbase.NewsRepository;
 import javafx.util.Pair;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.Table;
+import org.apache.log4j.Logger;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @JsonRpcService
-public class JsonRpcSearchService {
+public class NimrooJsonRpcService {
     SearchUIConnector searchUIConnector;
+    private Configuration hBaseConfiguration;
+    private String domainTableString, domainFamilyString, reverseDomainTableString, reversrDomainFamilyString;
+    private Table domainTable, reverseDomainTable;
+    private Connection connection;
+    private Logger logger;
 
-    public JsonRpcSearchService(SearchUIConnector searchUIConnector) {
+
+    public NimrooJsonRpcService(SearchUIConnector searchUIConnector) {
         this.searchUIConnector = searchUIConnector;
     }
 
     @JsonRpcMethod
     public String ping() {
-        //TODO ali Sout
-//        System.out.println("ping called");
         return "pong";
     }
 
@@ -67,6 +78,25 @@ public class JsonRpcSearchService {
             System.out.println(e);
         }
         throw new Exception("shit");
+    }
+
+    @JsonRpcMethod
+    public List<Pair> keywords() throws IOException {
+        return NewsRepository.getInstance().getTop10Trends().stream()
+                .map(item -> new Pair(item, "")).collect(Collectors.toList());
+    }
+
+    @JsonRpcMethod
+    public List<Pair> getSink(@JsonRpcParam("domain") final String domain) {
+        return DomainRepository.getInstance().getSinkDomains(domain).stream()
+                .map(item -> new Pair(item.getFirst(), item.getSecond())).collect(Collectors.toList());
+    }
+
+
+    @JsonRpcMethod
+    public List<Pair> getSource(@JsonRpcParam("domain") final String domain) {
+        return DomainRepository.getInstance().getSourceDomains(domain).stream()
+                .map(item -> new Pair(item.getFirst(), item.getSecond())).collect(Collectors.toList());
     }
 
 }
