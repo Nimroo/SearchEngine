@@ -138,8 +138,8 @@ public class RSSService {
 
   private void updateTrendWordsValue(String id) {
     try {
+      TimeUnit.MINUTES.sleep(7);
       elasticClient.addBulkToElastic();
-      TimeUnit.MILLISECONDS.sleep(100);
     } catch (IOException | InterruptedException e) {
       logger.error(e);
     }
