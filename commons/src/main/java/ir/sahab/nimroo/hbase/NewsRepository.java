@@ -61,7 +61,6 @@ public class NewsRepository {
       table = connection.getTable(TableName.valueOf(tableName));
     } catch (IOException e) {
       logger.error("can not get connection from HBase!", e);
-      System.exit(599);
     }
   }
 
@@ -96,6 +95,15 @@ public class NewsRepository {
     scan.setCaching(500);
     scan.setCacheBlocks(false);
     scan.addFamily(Bytes.toBytes(familyName));
+    return table.getScanner(scan);
+  }
+
+  public ResultScanner getResultScannerWithTimeRange(String familyName, long startTime, long endTime) throws IOException {
+    Scan scan = new Scan();
+    scan.setCaching(500);
+    scan.setCacheBlocks(false);
+    scan.addFamily(Bytes.toBytes(familyName));
+    scan.setTimeRange(startTime, endTime);
     return table.getScanner(scan);
   }
 

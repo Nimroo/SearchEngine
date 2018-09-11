@@ -1,7 +1,9 @@
 package ir.sahab.nimroo.rss;
 
+import ir.sahab.nimroo.Config;
 import ir.sahab.nimroo.elasticsearch.ElasticClient;
 import ir.sahab.nimroo.hbase.NewsRepository;
+import ir.sahab.nimroo.keywordextraction.ElasticAnalysisClient;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -14,7 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -23,6 +25,8 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.hadoop.hbase.Cell;
+import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -37,14 +41,20 @@ public class RSSService {
   private Logger logger;
   private ExecutorService executorService;
   private ElasticClient elasticClient;
+  private ElasticAnalysisClient elasticAnalysisClient;
+  private Map<String, Double> trendWords;
+  private ArrayList<String> top5Trends;
 
   RSSService() {
-    elasticClient = new ElasticClient();
+    trendWords = new HashMap<>();
+    top5Trends = new ArrayList<>();
+    elasticAnalysisClient = new ElasticAnalysisClient(Config.server3Address);
+    elasticClient = new ElasticClient(Config.server1Address);
     PropertyConfigurator.configure(
         RSSService.class.getClassLoader().getResource("log4j.properties"));
     logger = Logger.getLogger(RSSService.class);
     executorService =
-        new ThreadPoolExecutor(20, 20, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(50));
+        new ThreadPoolExecutor(40, 40, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(150));
   }
 
   private void updateNews() throws IOException {
@@ -69,7 +79,7 @@ public class RSSService {
         elasticClient.addBulkToElastic();
         logger.info("news added to elastic.");
       } catch (IOException e) {
-        logger.error("add Bulk to Elastic throw IO Exception." ,e);
+        logger.error("add Bulk to Elastic throw IO Exception.", e);
       }
     }
   }
@@ -82,10 +92,8 @@ public class RSSService {
     String last =
         Bytes.toString(result.getValue(Bytes.toBytes("newsAgency"), Bytes.toBytes("last")));
 
-    if(rssUrl == null || configStr == null)
-      return;
-    if(last == null)
-      last = "";
+    if (rssUrl == null || configStr == null) return;
+    if (last == null) last = "";
     ArrayList<HashMap<String, String>> rssData = parsRSS(getRSSDocument(rssUrl));
     ArrayList<String> config = new ArrayList<>(Arrays.asList(configStr.split("/")));
     if (!rssData.isEmpty()) {
@@ -105,16 +113,48 @@ public class RSSService {
       String link = hashMap.get("link");
       String title = hashMap.get("title");
       String text = crawlNews(hashMap.get("link"), config);
-      String pubDate = convertToLocalDateTimeViaMilisecond(reFormatPublishDate(hashMap.get("pubDate"))).toString();
-      if(text.equals("not Found!"))
-        continue;
+      String pubDate =
+          convertToLocalDateTimeViaMilisecond(reFormatPublishDate(hashMap.get("pubDate")))
+              .toString();
+      if (text.equals("not Found!")) continue;
       try {
-        elasticClient.addNewsToBulkOfElastic(link, title, text, pubDate, DigestUtils.md5Hex(link), RssConfig.newsIndexNameForElastic);
+        elasticClient.addNewsToBulkOfElastic(
+            link,
+            title,
+            text,
+            pubDate,
+            DigestUtils.md5Hex(link),
+            RssConfig.newsIndexNameForElastic);
+        executorService.submit(
+            () -> {
+              updateTrendWordsValue(DigestUtils.md5Hex(link));
+            });
         logger.info("correct news add to  bulk of elastic.");
       } catch (IOException e) {
         logger.error("can not add news to elastic", e);
       }
     }
+  }
+
+  private void updateTrendWordsValue(String id) {
+    HashMap<String, Double> top5;
+    try {
+      top5 = elasticAnalysisClient.getInterestingKeywords(RssConfig.newsIndexNameForElastic, id, 5);
+    } catch (IOException e) {
+      logger.warn(e);
+      return;
+    }
+    top5.forEach(
+        (k, v) -> {
+          if (!RssConfig.stopWords.contains(k)) {
+            try {
+              NewsRepository.getInstance()
+                  .putToTable("trendWords", Bytes.toBytes(k), Bytes.toBytes(id), Bytes.toBytes(v));
+            } catch (IOException e) {
+              logger.warn(e);
+            }
+          }
+        });
   }
 
   private Date reFormatPublishDate(String pubDate) {
@@ -157,7 +197,8 @@ public class RSSService {
     return rssDataMap;
   }
 
-  private boolean checkTag(org.w3c.dom.Document domTree, int domNodeNumber, int itemNodeNumber, String tag) {
+  private boolean checkTag(
+      org.w3c.dom.Document domTree, int domNodeNumber, int itemNodeNumber, String tag) {
     return domTree
         .getElementsByTagName("item")
         .item(domNodeNumber)
@@ -167,7 +208,8 @@ public class RSSService {
         .contains(tag);
   }
 
-  private String contentOfNode(org.w3c.dom.Document domTree, int domNodeNumber, int itemNodeNumber) {
+  private String contentOfNode(
+      org.w3c.dom.Document domTree, int domNodeNumber, int itemNodeNumber) {
     return domTree
         .getElementsByTagName("item")
         .item(domNodeNumber)
@@ -202,7 +244,7 @@ public class RSSService {
       URLConnection con = url.openConnection();
       con.setConnectTimeout(15000);
       con.setReadTimeout(15000);
-      con.setRequestProperty("User-Agent","Mozilla/5.0 ( compatible ) ");
+      con.setRequestProperty("User-Agent", "Mozilla/5.0 ( compatible ) ");
       return domBuilder.parse(con.getInputStream());
     } catch (SAXException | IOException | ParserConfigurationException e) {
       logger.error(e);
@@ -216,12 +258,67 @@ public class RSSService {
         .toLocalDateTime();
   }
 
+  private void updateTrendWords() throws IOException {
+    while (true) {
+      trendWords.clear();
+      top5Trends.clear();
+      ResultScanner scanner = null;
+      try {
+        scanner =
+            NewsRepository.getInstance()
+                .getResultScannerWithTimeRange(
+                    "trendWords",
+                    System.currentTimeMillis() - (18 * 60 * 60 * 1000),
+                    System.currentTimeMillis());
+      } catch (IOException e) {
+        logger.error(e);
+      }
+      if (scanner == null) {
+        logger.error("error in RSSService Class, scanner is null.");
+        continue;
+      }
+      for (Result result = scanner.next(); (result != null); result = scanner.next()) {
+        for (Cell cell : result.listCells()) {
+          String word = Bytes.toString(CellUtil.cloneQualifier(cell));
+          Double value = Bytes.toDouble(CellUtil.cloneValue(cell));
+          if (!trendWords.containsKey(word)) trendWords.put(word, value);
+          else trendWords.replace(word, trendWords.get(word) + value);
+        }
+      }
+      for (int i = 0; i < Math.min(10, trendWords.size()); i++) {
+        Map.Entry<String, Double> maxEntry = null;
+        for (Map.Entry<String, Double> entry : trendWords.entrySet()) {
+          if (maxEntry == null || entry.getValue().compareTo(maxEntry.getValue()) > 0.0000) {
+            maxEntry = entry;
+          }
+        }
+        if (maxEntry == null) continue;
+        trendWords.remove(maxEntry.getKey());
+        top5Trends.add(maxEntry.getKey());
+        logger.info("one of trend words; " + maxEntry.getKey() + " " + maxEntry.getValue());
+      }
+      try {
+        TimeUnit.HOURS.sleep(2);
+      } catch (InterruptedException e) {
+        logger.warn(e);
+      }
+    }
+  }
+
   public void runNewsUpdater() {
     executorService.submit(
         () -> {
           try {
             elasticClient.createIndexForNews(RssConfig.newsIndexNameForElastic);
             updateNews();
+          } catch (IOException e) {
+            logger.error(e);
+          }
+        });
+    executorService.submit(
+        () -> {
+          try {
+            updateTrendWords();
           } catch (IOException e) {
             logger.error(e);
           }

@@ -1,15 +1,16 @@
 package ir.sahab.nimroo.mapreduce;
 
-import ir.sahab.nimroo.model.Link;
-import ir.sahab.nimroo.model.PageData;
-import ir.sahab.nimroo.serialization.PageDataSerializer;
-
+import ir.sahab.nimroo.Config;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
-
+import java.util.Map;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.Cell;
+import org.apache.hadoop.hbase.CellUtil;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
@@ -19,21 +20,21 @@ import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
 import org.apache.hadoop.hbase.mapreduce.TableMapper;
 import org.apache.hadoop.hbase.mapreduce.TableReducer;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.hadoop.io.Text;
+import org.apache.hadoop.hbase.util.Pair;
+import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Reducer;
 
-public class RepetitiveAnchors {
+public class Top5Anchors {
 
-  private static RepetitiveAnchors ourInstance = new RepetitiveAnchors();
-
-  public static RepetitiveAnchors getInstance() {
+  private static Top5Anchors ourInstance = new Top5Anchors();
+  public static Top5Anchors getInstance() {
     return ourInstance;
   }
-
   private static HashSet<String> uselessAnchors;
 
-  private RepetitiveAnchors() {
+  private Top5Anchors() {
     uselessAnchors = new HashSet<>();
     uselessAnchors.add("link");
     uselessAnchors.add("this");
@@ -120,25 +121,23 @@ public class RepetitiveAnchors {
     uselessAnchors.add("faqs");
   }
 
-  static class AnchorMapper extends TableMapper<Text, Text> {
+  public static class TopAnchorMapper extends TableMapper<BytesWritable, BytesWritable> {
 
     private int numRecords = 0;
-
     @Override
-    public void map(ImmutableBytesWritable row, Result values, Context context) {
-      PageData pageData = null;
-      try {
-        pageData = PageDataSerializer.getInstance().deserialize(values.value());
-      } catch (com.github.os72.protobuf351.InvalidProtocolBufferException e) {
-        return;
+    public void map(ImmutableBytesWritable row, Result values, Context context)
+        throws IOException, InterruptedException {
+      BytesWritable link;
+      BytesWritable anchor;
+      for(Cell cell : values.listCells()){
+        if(Arrays.equals(CellUtil.cloneQualifier(cell), Bytes.toBytes("url")))
+          continue;
+        if(uselessAnchors.contains(Bytes.toString(CellUtil.cloneValue(cell))))
+          continue;
+        link = new BytesWritable(Bytes.toBytes(DigestUtils.md5Hex(Bytes.toString(CellUtil.cloneQualifier(cell)))));
+        anchor = new BytesWritable(Bytes.toBytes(Bytes.toString(CellUtil.cloneValue(cell)).toLowerCase()));
+        context.write(link,anchor);
       }
-      for (Link link : pageData.getLinks())
-        if (!uselessAnchors.contains(link.getAnchor().toLowerCase())) {
-          try {
-            context.write(new Text(DigestUtils.md5Hex(link.getLink())), new Text(link.getAnchor()));
-          } catch (IOException | InterruptedException ignored) {
-          }
-        }
       numRecords++;
       if ((numRecords % 10000) == 0) {
         context.setStatus("mapper processed " + numRecords + " records so far");
@@ -146,56 +145,77 @@ public class RepetitiveAnchors {
     }
   }
 
-  public static class AnchorReducer extends TableReducer<Text, Text, Text> {
-
-    @Override
-    public void reduce(Text key, Iterable<Text> values, Context context) {
-      StringBuilder anchor = new StringBuilder();
-      for (Text val : values) {
-        anchor.append(val);
+  public static class TopAnchorCombiner extends Reducer<BytesWritable, BytesWritable, BytesWritable, Pair<BytesWritable, LongWritable>> {
+    HashMap<BytesWritable, Long> hashMap = new HashMap<>();
+    public void reduce(BytesWritable key, Iterable<BytesWritable> values, Context context) {
+      for(BytesWritable tmp : values){
+        if(!hashMap.containsKey(tmp))
+          hashMap.put(tmp, 1L);
+        else
+          hashMap.replace(tmp, hashMap.get(tmp) + 1);
       }
-      Put put = new Put(key.getBytes());
-      put.addColumn(
-          Bytes.toBytes("pageData"), Bytes.toBytes("anchors"), Bytes.toBytes(anchor.toString()));
-      try {
-        context.write(key, put);
-      } catch (IOException | InterruptedException ignored) {
-      }
+      hashMap.forEach((k, v) -> {
+        LongWritable total = new LongWritable(v);
+        Pair<BytesWritable, LongWritable> pair = new Pair<>(k,total);
+        try {
+          context.write(key, pair);
+        } catch (IOException | InterruptedException e) {
+          e.printStackTrace();
+        }
+      });
     }
   }
 
-  public static class AnchorCombiner extends Reducer<Text, Text, Text, Text> {
-
-    public void reduce(Text key, Iterable<Text> values, Context context) {
-      StringBuilder tmp = new StringBuilder();
-      for (Text val : values) {
-        tmp.append(val);
-        tmp.append(" ");
+  public static class TopAnchorReducer extends TableReducer<BytesWritable, Pair<BytesWritable, LongWritable>, BytesWritable> {
+    HashMap<BytesWritable, Long> hashMap = new HashMap<>();
+    @Override
+    public void reduce(BytesWritable key, Iterable<Pair<BytesWritable, LongWritable>> values, Context context)
+        throws IOException, InterruptedException {
+      Put pp = new Put(Bytes.toBytes("1"));
+      pp.addColumn(Bytes.toBytes("anchor"), Bytes.toBytes(1), Bytes.toBytes(2));
+      context.write(key, pp);
+      for(Pair<BytesWritable, LongWritable> tmp : values){
+        if(!hashMap.containsKey(tmp.getFirst()))
+          hashMap.put(tmp.getFirst(), tmp.getSecond().get());
+        else
+          hashMap.replace(tmp.getFirst(), hashMap.get(tmp.getFirst()) + tmp.getSecond().get());
       }
-      try {
-        context.write(key, new Text(tmp.toString()));
-      } catch (IOException | InterruptedException ignored) {
+      Put put = new Put(key.getBytes());
+      Map.Entry<BytesWritable, Long> maxEntry;
+      for (int i = 0; i < Math.min(5, hashMap.size()); i++) {
+        maxEntry = null;
+        for (Map.Entry<BytesWritable, Long> entry : hashMap.entrySet()) {
+          if (maxEntry == null || entry.getValue().compareTo(maxEntry.getValue()) > 0) {
+            maxEntry = entry;
+          }
+        }
+        if (maxEntry == null) continue;
+        hashMap.remove(maxEntry.getKey());
+        put.addColumn(Bytes.toBytes("anchor"), Bytes.toBytes(i), maxEntry.getKey().getBytes());
       }
+      context.write(key, put);
     }
   }
 
   public static void main(String[] args) throws Exception {
+    Config.load();
     Configuration config = HBaseConfiguration.create();
-    config.addResource(new Path("/home/hadoop/ir.sahab.hbase-1.2.6.1/conf/ir.sahab.hbase-site.xml"));
-    config.addResource(new Path("/home/hadoop/hadoop-2.9.1/etc/hadoop/core-site.xml"));
-    Job job = Job.getInstance(config, "Repetitive Anchors");
-    job.setJarByClass(RepetitiveAnchors.class);
-    job.setCombinerClass(RepetitiveAnchors.AnchorCombiner.class);
+    config.addResource(new Path(Config.hBaseSite));
+    config.addResource(new Path(Config.hadoopCoreSite));
+    Job job = Job.getInstance(config, "Top5Anchors");
+    job.setJarByClass(Top5Anchors.class);
+    job.setCombinerClass(Top5Anchors.TopAnchorCombiner.class);
 
     Scan scan = new Scan();
     scan.setCaching(500);
     scan.setCacheBlocks(false);
-    scan.addColumn(Bytes.toBytes("pageData"), Bytes.toBytes("pageData"));
-    scan.addColumn(Bytes.toBytes("pageData"), Bytes.toBytes("myPageData"));
+    scan.addFamily(Bytes.toBytes("outLink"));
+    scan.setStopRow(Bytes.toBytes("000000d3e3f87b98af900d15f9e9b187"));
 
     TableMapReduceUtil.initTableMapperJob(
-        "nimroo", scan, RepetitiveAnchors.AnchorMapper.class, Text.class, Text.class, job);
-    TableMapReduceUtil.initTableReducerJob("nimroo", RepetitiveAnchors.AnchorReducer.class, job);
+        "crawler", scan, Top5Anchors.TopAnchorMapper.class, BytesWritable.class, BytesWritable.class, job);
+    TableMapReduceUtil.initTableReducerJob("testAnchor", Top5Anchors.TopAnchorReducer.class, job);
     System.exit(job.waitForCompletion(true) ? 0 : 1);
   }
+
 }
