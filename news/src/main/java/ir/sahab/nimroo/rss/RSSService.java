@@ -290,7 +290,7 @@ public class RSSService {
         for (Cell cell : result.listCells()) {
           String word = Bytes.toString(CellUtil.cloneQualifier(cell));
           Double value = Bytes.toDouble(CellUtil.cloneValue(cell));
-          if(RssConfig.stopWords.contains(word))
+          if(RssConfig.stopWords.contains(word.toLowerCase()))
             continue;
           if (!trendWords.containsKey(word)) trendWords.put(word, value);
           else trendWords.replace(word, trendWords.get(word) + value);

@@ -48,7 +48,7 @@ public class RssConfig {
       logger.error(e);
     }
     while (sc.hasNextLine()) {
-      stopWords.add(sc.nextLine());
+      stopWords.add(sc.nextLine().toLowerCase());
     }
   }
 
