@@ -93,7 +93,7 @@ public class KeywordRelationFinder {
 			}
 			list2.addAll(list1);
 			return list2;
-		}, 72);
+		});
 
 		JavaPairRDD<String, Tuple2<List<String>, List<String>>> sinkDomKwDomKwSinkDom =
 				sinkDomainListKeyword.join(domainKeyword);
@@ -118,7 +118,7 @@ public class KeywordRelationFinder {
 
 	private JavaPairRDD<String, List<String>> extractDomainAndList(String inputTable, String inputFamily) {
 		JavaPairRDD<ImmutableBytesWritable, Result> hBaseRDD =
-				hBaseAPI.getRDD(javaSparkContext, inputTable, inputFamily);
+				hBaseAPI.getRDD(javaSparkContext, inputTable, inputFamily, "0", "01");
 
 		return hBaseRDD.mapToPair(pairRow -> {
 			Result result = pairRow._2;

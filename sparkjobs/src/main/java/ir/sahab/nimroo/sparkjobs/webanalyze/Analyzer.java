@@ -21,16 +21,16 @@ public class Analyzer {
 		keywordExtractor.extractKeywords();
 */
 
-
+/*
 		KeywordRelationFinder keywordRelationFinder = new KeywordRelationFinder(
 				"domain", "domainGraph", "finalDomKeyword",
 				"keywords", "keywordRelation", "relations");
 		keywordRelationFinder.findKeywordRelation();
-
-/*
-		DomainReverser domainReverser = new DomainReverser("domain", "domainGraph", "reverseDomain",
-				"domainGraph");
-		domainReverser.reverseDomains();
 */
+
+		DomainReverser domainReverser = new DomainReverser("domain", "domainGraph",
+				"reverseDomain", "domainGraph");
+		domainReverser.reverseDomains();
+
 	}
 }
