@@ -107,6 +107,10 @@
     <button v-on:click="click" class="btn waves-effect waves-light" type="button" name="action">Search</button>
 </div>
 
+<div class="collection" id="keywords" style="width: 50%;">
+    <button v-for="item in keywords" class="waves-effect waves-teal btn-flat" type="button">{{item}}</button>
+</div>
+
 <div class="collection" id="result" style="width: 50%;">
     <li v-for="item in res" class="collection-item"><a v-bind:href="item['key']" class="first-content"><i>{{item['key']}}</i></a><span class="secondary-content">Date: {{item['value']}}</span></li>
 </div>

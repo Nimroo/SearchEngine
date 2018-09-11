@@ -1,3 +1,4 @@
+var address = "http://127.0.0.1:6060";
 var search = new Vue({
 	el: '#search',
 	data: {
@@ -7,6 +8,10 @@ var search = new Vue({
 document.addEventListener('DOMContentLoaded', function() {
 	var elems = document.querySelectorAll('.collapsible');
 	var instances = M.Collapsible.init(elems, {}/*options*/);
+
+	jQuery.post(address, JSON.stringify({method:"keywords", params:{}, jsonrpc:"2.0", id:Date.now()}), item=> {
+		keywords.keywords = JSON.parse(item).result;
+	});
 });
 
 var newsSearch = new Vue({
@@ -30,6 +35,13 @@ var normalSearch = new Vue({
 var result = new Vue({
 	el: '#result',
 	data: {res:[]},
+	methods: {
+	}
+});
+
+var keywords = new Vue({
+	el: '#keywords',
+	data: {keywords:[]},
 	methods: {
 	}
 });
@@ -89,7 +101,7 @@ var search_button = new Vue({
 			}
 
 			console.log(method, params);
-			jQuery.post("http://127.0.0.1:6060",JSON.stringify({method, params, jsonrpc:"2.0", id:Date.now()}), item=> {
+			jQuery.post(address, JSON.stringify({method, params, jsonrpc:"2.0", id:Date.now()}), item=> {
 				result.res = JSON.parse(item).result;
 			});
 		}
