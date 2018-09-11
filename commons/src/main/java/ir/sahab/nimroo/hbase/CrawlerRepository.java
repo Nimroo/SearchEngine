@@ -175,7 +175,7 @@ public class CrawlerRepository {
       Table table = connection.getTable(TableName.valueOf("pageRankDomain"));
       Get get = new Get(Bytes.toBytes(DigestUtils.md5Hex(link))).addColumn(Bytes.toBytes("pageRank"), Bytes.toBytes("pageRank"));
       return Bytes.toDouble(table.get(get).getValue(Bytes.toBytes("pageRank"), Bytes.toBytes("pageRank")));
-    } catch (IOException e) {
+    } catch (IOException | NullPointerException e) {
       logger.warn(e);
       return 0;
     }
