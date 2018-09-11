@@ -56,7 +56,7 @@ public class JsonRpcSearchService {
 
     @JsonRpcMethod
     public ArrayList<Pair<String, String>> newsSearch(@JsonRpcParam("query")final String query) throws IOException {
-        return searchUIConnector.newsSearch(query, "newindex");
+        return searchUIConnector.newsSearch(query, "newsindex");
     }
 
 }

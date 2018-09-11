@@ -81,7 +81,7 @@ var search_button = new Vue({
 				};
 				method = "normalSearch";
 			}
-			else if (document.getElementsByClassName("active").item(0).getAttribute('id') === 'news_search') {
+			else {
 				params = {
 					query: newsSearch.text
 				};
