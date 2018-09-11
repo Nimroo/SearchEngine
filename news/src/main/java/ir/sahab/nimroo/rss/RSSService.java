@@ -139,8 +139,10 @@ public class RSSService {
   private void updateTrendWordsValue(String id) {
     HashMap<String, Double> top5;
     try {
+      elasticClient.addBulkToElastic();
+      TimeUnit.MILLISECONDS.sleep(100);
       top5 = elasticAnalysisClient.getInterestingKeywords(RssConfig.newsIndexNameForElastic, id, 5);
-    } catch (IOException e) {
+    } catch (InterruptedException | IOException e) {
       logger.warn(e);
       return;
     }
@@ -278,9 +280,13 @@ public class RSSService {
         continue;
       }
       for (Result result = scanner.next(); (result != null); result = scanner.next()) {
+        if(Bytes.toString(result.getRow()).equals("top10"))
+          continue;
         for (Cell cell : result.listCells()) {
           String word = Bytes.toString(CellUtil.cloneQualifier(cell));
           Double value = Bytes.toDouble(CellUtil.cloneValue(cell));
+          if(RssConfig.stopWords.contains(word))
+            continue;
           if (!trendWords.containsKey(word)) trendWords.put(word, value);
           else trendWords.replace(word, trendWords.get(word) + value);
         }
