@@ -50,7 +50,7 @@
             </div>
         </li>
         <li id="advance_search">
-            <div class="collapsible-header"><i class="material-icons"></i>Advance</div>
+            <div class="collapsible-header"><i class="material-icons"></i>AdvanceSearch</div>
             <div class="collapsible-body">
                 <span>
                     <div class="input-field s12" v-for="item in must">
@@ -87,6 +87,19 @@
                 </span>
             </div>
         </li>
+        <li id="news_search">
+            <div class="collapsible-header"><i class="material-icons"></i>NewsSearch</div>
+            <div class="collapsible-body">
+                <span>
+                    <div class="input-field s12" v-for="text">
+                        <input v-model="text" id="news_search_text" type="text" class="validate">
+                        <label for="search_text">Search</label>
+                        <span class="helper-text" data-error="wrong" data-success="right">Search what ever you want</span>
+                    </div>
+                </span>
+            </div>
+        </li>
+
     </ul>
 
 </div>
