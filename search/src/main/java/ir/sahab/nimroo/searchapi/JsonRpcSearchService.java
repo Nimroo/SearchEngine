@@ -5,11 +5,10 @@ import com.github.arteam.simplejsonrpc.core.annotation.JsonRpcParam;
 import com.github.arteam.simplejsonrpc.core.annotation.JsonRpcService;
 import ir.sahab.nimroo.elasticsearch.SearchUIConnector;
 import ir.sahab.nimroo.Config;
+import javafx.util.Pair;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.io.IOException;
+import java.util.*;
 
 @JsonRpcService
 public class JsonRpcSearchService {
@@ -27,20 +26,20 @@ public class JsonRpcSearchService {
     }
 
     @JsonRpcMethod
-    public Set<Map.Entry<String, Double>> normalSearch(
+    public ArrayList normalSearch(
             @JsonRpcParam("text")final String text,
             @JsonRpcParam("safety")final boolean safety,
             @JsonRpcParam("pageRank")final boolean pageRank) {
         try {
-            return searchUIConnector.simpleSearch(text, Config.elasticsearchIndexName, safety, pageRank).entrySet();
+            return searchUIConnector.simpleSearch(text, Config.elasticsearchIndexName, safety, pageRank);
         } catch (Exception e) {
             e.printStackTrace();
-            return new HashSet<>();
+            return new ArrayList();
         }
     }
 
     @JsonRpcMethod
-    public Set<Map.Entry<String, Double>> advanceSearch(
+    public ArrayList<String> advanceSearch(
             @JsonRpcParam("must")final ArrayList<String> must,
             @JsonRpcParam("must_not")final ArrayList<String> mustNot,
             @JsonRpcParam("should")final ArrayList<String> should,
@@ -48,11 +47,16 @@ public class JsonRpcSearchService {
             @JsonRpcParam("pageRank")final boolean pageRank) {
         try {
             return searchUIConnector.advancedSearch(must, mustNot, should,
-                    Config.elasticsearchIndexName, safety, pageRank).entrySet();
+                    Config.elasticsearchIndexName, safety, pageRank);
         } catch (Exception e) {
             e.printStackTrace();
-            return new HashSet<>();
+            return new ArrayList<>();
         }
+    }
+
+    @JsonRpcMethod
+    public ArrayList<Pair<String, String>> newsSearch(@JsonRpcParam("query")final String query) throws IOException {
+        return searchUIConnector.newsSearch(query, "newindex");
     }
 
 }
