@@ -93,7 +93,7 @@ public class KeywordRelationFinder {
 			}
 			list2.addAll(list1);
 			return list2;
-		});
+		}, 72);
 
 		JavaPairRDD<String, Tuple2<List<String>, List<String>>> sinkDomKwDomKwSinkDom =
 				sinkDomainListKeyword.join(domainKeyword);
