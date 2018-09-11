@@ -295,6 +295,7 @@ public class RSSService {
         if (maxEntry == null) continue;
         trendWords.remove(maxEntry.getKey());
         top5Trends.add(maxEntry.getKey());
+        NewsRepository.getInstance().putToTable("trendWords", Bytes.toBytes(i), Bytes.toBytes("top10"), Bytes.toBytes(maxEntry.getKey()));
         logger.info("one of trend words; " + maxEntry.getKey() + " " + maxEntry.getValue());
       }
       try {
