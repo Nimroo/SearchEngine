@@ -1,0 +1,56 @@
+<html>
+<head>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" rel="stylesheet" type="text/css" />
+
+    <style type="text/css">
+        #mynetwork {
+            border: 1px solid lightgray;
+        }
+    </style>
+</head>
+<body>
+<div id="mynetwork"></div>
+
+<script type="text/javascript">
+	function load(callback) {
+
+		var xobj = new XMLHttpRequest();
+		xobj.overrideMimeType("application/json");
+		xobj.open('GET', 'a.dot', true); // Replace 'my_data' with the path to your file
+		xobj.onreadystatechange = function () {
+			if (xobj.readyState == 4 && xobj.status == "200") {
+				// Required use of an anonymous callback as .open will NOT return a value but simply returns undefined in asynchronous mode
+				callback(xobj.responseText);
+			}
+		};
+		xobj.send(null);
+	}
+
+
+	function draw(data) {
+		var parsedData = vis.network.convertDot(data);
+
+		var data = {
+			nodes: parsedData.nodes,
+			edges: parsedData.edges
+		}
+
+		var options = parsedData.options;
+		options.physics = {enabled:false}
+		// you can extend the options like a normal JSON variable:
+		options.nodes = {
+		}
+
+		// create a network
+		var container = document.getElementById('mynetwork');
+
+		// initialize your network!
+		var network = new vis.Network(container, data, options);
+		network.stabilize(2000);
+
+	}
+	load(draw);
+</script>
+</body>
+</html>
